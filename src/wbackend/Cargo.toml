@@ -1,0 +1,43 @@
+[package]
+name = "wbackend"
+version = "1.0.0"
+edition = "2021"
+authors = ["goychay23 <wasma@authority.rs>"]
+description = "WASMA – Resource-first runtime: CPU-priority, GPU-optional, platform-agnostic"
+license = "MIT OR Apache-2.0"
+keywords = ["wasma", "resource-management", "cpu-affinity", "gpu", "runtime"]
+categories = ["os", "concurrency"]
+
+# Binary tanımı – `cargo run` ile çalıştırılabilir
+[[bin]]
+name = "wasma_backend"
+path = "src/main.rs"
+
+[dependencies]
+core_affinity = "0.8.1"
+libc = "0.2.155"
+
+# CLI desteği – komut satırı arayüzü için
+clap = { version = "4.5", features = ["derive"] }
+
+# Platform-specific: Sadece macOS'ta Metal derlenir
+[target.'cfg(target_os = "macos")'.dependencies]
+metal = "0.28.0"
+
+# Opsiyonel bağımlılıklar – hata yönetimi ve loglama
+anyhow = { version = "1.0.86", optional = true }
+tracing = { version = "0.1.40", optional = true }
+tracing-subscriber = { version = "0.3.18", optional = true }
+
+[features]
+# Default özellikler
+default = ["full"]
+
+# Tam özellikler (loglama + hata yönetimi)
+full = ["anyhow", "tracing", "tracing-subscriber"]
+
+# Minimal CPU-only binary (en küçük executable)
+cpu-only = []
+
+# Metal olmadan (Linux/Windows için)
+no-metal = []
