@@ -1,19 +1,16 @@
 // src/core/runtime.rs
 // UBIN Runtime – Tek Otorite Döngüsü ve Lifecycle Yöneticisi
-// Tüm window'ları yönetir, event'leri dispatch eder, render'ı zorlar
-// Assignment enforce, lease kontrolü, platform adaptasyonu, convergence tetikleme
-// Eternal loop – UBIN sonsuz egemenlik sağlar
 
-use crate::core::abi::{UbinWidget, UbinAction};
+use crate::core::abi::UbinWidget;
 use crate::core::convergence::UbinConvergenceEngine;
-use crate::platform::{adapt_window_to_platform, UbinPlatform};
-use crate::assignment::{Assignment, ExecutionMode};
-use crate::WBackend;
+use crate::platform::adapt_window_to_platform;
+// DÜZELTME: wbackend'den import
+use wbackend::{Assignment, ExecutionMode, ResourceMode, WBackend};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
-use crate::resource_manager::ResourceMode;
-/// UBIN Runtime Window – Runtime'da yönetilen her pencere
+
+/// UBIN Runtime Window
 pub struct UbinRuntimeWindow {
     pub id: u32,
     pub title: String,
@@ -26,7 +23,7 @@ pub struct UbinRuntimeWindow {
     pub frame_count: u64,
 }
 
-/// UBIN Global Runtime – Tek instance, eternal loop
+/// UBIN Global Runtime
 pub struct UbinRuntime {
     backend: Arc<WBackend>,
     convergence_engine: Mutex<UbinConvergenceEngine>,
@@ -37,7 +34,6 @@ pub struct UbinRuntime {
 }
 
 impl UbinRuntime {
-    /// UBIN runtime başlatılır – tek otorite kurulur
     pub fn initialize() -> Self {
         let backend = Arc::new(WBackend::new(ResourceMode::Auto));
         let convergence_engine = UbinConvergenceEngine::initiate_global_convergence();
@@ -54,7 +50,6 @@ impl UbinRuntime {
         }
     }
 
-    /// Yeni window spawn eder – UBIN ABI ile
     pub fn spawn_window(&mut self, title: String, width: u32, height: u32, root_widget: UbinWidget, mode: ExecutionMode) -> u32 {
         let mut assignment = Assignment::new(self.next_window_id);
         assignment.execution_mode = mode;
@@ -70,7 +65,7 @@ impl UbinRuntime {
         let window_id = self.next_window_id;
         self.next_window_id += 1;
 
-        let window = UbinRuntimeWindow {
+        let mut window = UbinRuntimeWindow {
             id: window_id,
             title,
             width,
@@ -82,105 +77,86 @@ impl UbinRuntime {
             frame_count: 0,
         };
 
-        // Platform adaptasyonu
-        adapt_window_to_platform(&mut window);  // platform/mod.rs'den
-
-        // Convergence uygula
+        adapt_window_to_platform(&mut window);
         self.convergence_engine.lock().unwrap().apply_convergence_to_window(&mut window);
 
+        println!("🖥️ UBIN window spawned – ID: {} | Title: '{}'", window_id, window.title);
+        
         self.windows.insert(window_id, window);
-
-        println!("🖥️ UBIN window spawned – ID: {} | Title: '{}' | Assignment {}", window_id, title, assignment.id);
-
         window_id
     }
 
-    /// Ana eternal döngü – 60 FPS hedef
-    pub fn run_eternal_dominion(&mut self) {
-        println!("🔄 UBIN ETERNAL DOMINION CYCLE STARTED – No escape from authority");
+pub fn run_eternal_dominion(&mut self) {
+    println!("🔄 UBIN ETERNAL DOMINION CYCLE STARTED");
 
-        while self.running && !self.windows.is_empty() {
-            let frame_start = Instant::now();
+    while self.running && !self.windows.is_empty() {
+        let frame_start = Instant::now();
 
-            // Global backend cycle – tüm assignment'lar için enforce
-            self.backend.run_cycle();
+        self.backend.run_cycle();
 
-            // Tüm window'ları işle
-            let mut terminated = vec![];
+        // 1. Window id’lerini önceden topla
+        let window_ids: Vec<u32> = self.windows.keys().cloned().collect();
 
-            for (id, window) in self.windows.iter_mut() {
+        let mut terminated = vec![];
+
+        for id in window_ids {
+            // remove ile ownership al → E0502 hatası kalkar
+            if let Some(mut window) = self.windows.remove(&id) {
                 if window.assignment.lease_expired() {
                     window.active = false;
-                    terminated.push(*id);
-                    println!("⏰ Lease expired – Window {} terminated by UBIN authority", id);
+                    terminated.push(id);
+                    println!("⏰ Lease expired – Window {} terminated", id);
                     continue;
                 }
 
-                // Render cycle
-                self.render_frame(*id, window);
-
-                // Simulated events – gerçekte platformdan gelecek
-                self.dispatch_simulated_events(*id, window);
-
+                // render ve event dispatch artık mutable ownership ile çalışıyor
+                self.render_frame(id, &mut window);
+                self.dispatch_simulated_events(id, &mut window);
                 window.frame_count += 1;
-            }
 
-            // Temizle
-            for id in terminated {
-                if let Some(window) = self.windows.remove(&id) {
-                    window.assignment.stop_task();
-                    println!("🧹 Window {} cleaned up – Task stopped", id);
-                }
-            }
-
-            // FPS kontrolü
-            let frame_time = frame_start.elapsed();
-            if frame_time < Duration::from_millis(16) {
-                std::thread::sleep(Duration::from_millis(16) - frame_time);
+                // ownership geri HashMap’e ekle
+                self.windows.insert(id, window);
             }
         }
 
-        println!("🏁 UBIN eternal dominion ended – All windows terminated gracefully");
+        for id in terminated {
+            if let Some(mut window) = self.windows.remove(&id) {
+                window.assignment.stop_task();
+                println!("🧹 Window {} cleaned up", id);
+            }
+        }
+
+        let frame_time = frame_start.elapsed();
+        if frame_time < Duration::from_millis(16) {
+            std::thread::sleep(Duration::from_millis(16) - frame_time);
+        }
     }
 
-    /// Tek frame render – platforma zorla
+    println!("🏁 UBIN eternal dominion ended");
+}
+
     fn render_frame(&self, window_id: u32, window: &mut UbinRuntimeWindow) {
         window.last_frame = Instant::now();
-
-        println!(
-            "🎨 UBIN rendering frame {} for window {} – '{}' | FPS: {:.1}",
-            window.frame_count,
-            window_id,
-            window.title,
-            1.0 / window.last_frame.elapsed().as_secs_f32().max(0.001)
-        );
-
-        // Gerçekte burada platform render çağrısı olacak
-        // fallback.rs veya platform adaptörleri
+        println!("🎨 Rendering frame {} for window {}", window.frame_count, window_id);
     }
 
-    /// Simulated events – test için
     fn dispatch_simulated_events(&self, window_id: u32, window: &mut UbinRuntimeWindow) {
-        // Her 100 frame'de bir lease yenile
         if window.frame_count % 100 == 0 {
             window.assignment.start_lease(Duration::from_secs(300));
-            println!("🔄 Simulated event – Lease renewed for window {}", window_id);
+            println!("🔄 Lease renewed for window {}", window_id);
         }
 
-        // Her 500 frame'de bir close simüle
         if window.frame_count % 500 == 0 && window.frame_count > 100 {
             window.active = false;
-            println!("🛑 Simulated event – Close requested for window {}", window_id);
+            println!("🛑 Close requested for window {}", window_id);
         }
     }
 
-    /// Runtime'ı durdur
     pub fn shutdown(&mut self) {
         self.running = false;
-        println!("🛑 UBIN runtime shutdown requested – Terminating all windows");
+        println!("🛑 UBIN runtime shutdown requested");
     }
 
-    /// Aktif window sayısı
     pub fn active_window_count(&self) -> usize {
         self.windows.len()
     }

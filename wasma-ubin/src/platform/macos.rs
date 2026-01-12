@@ -4,12 +4,12 @@
 // Eksik platformlara (Linux/Windows) polyfill olarak enjekte eder
 // Native AppKit app'ler UBIN kontrolünde çalışır
 
-use crate::core::abi::{UbinWidget, UbinAction, UbinLayoutDirection};
+use crate::core::abi::{UbinWidget, UbinLayoutDirection};
 use crate::core::runtime::UbinRuntimeWindow;
 use std::process::Command;
 
 /// macOS'ta tespit edilen UI stili
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum MacOSUIStyle {
     AquaClassic,
     VibrancyEnabled,
@@ -57,16 +57,16 @@ impl UbinMacOSAdaptor {
                     MacOSUIStyle::VibrancyEnabled | MacOSUIStyle::MontereyVibrancy | MacOSUIStyle::SonomaAdaptive => {
                         println!("🟢 Enabling NSVisualEffectView vibrancy + blur backdrop");
                     }
-                    MacOSUIStyle::BigSurModern | MacOSUIStyle::SonomaAdaptive => {
+                    MacOSUIStyle::BigSurModern => {
                         println!("🟢 Rounded corners + depth shadows + unified toolbar enabled");
                     }
                     _ => {
                         println!("🟡 Classic Aqua window with titlebar");
                     }
                 }
-                Self::translate_child(child, style);
+                Self::translate_child(child, *style);
             }
-            UbinWidget::Button { label, action, .. } => {
+            UbinWidget::Button { label, .. } => {
                 match style {
                     MacOSUIStyle::BigSurModern | MacOSUIStyle::MontereyVibrancy | MacOSUIStyle::SonomaAdaptive => {
                         println!("🔴 Aqua Button '{}' → Modern push button with vibrancy fill + hover highlight", label);
@@ -86,13 +86,14 @@ impl UbinMacOSAdaptor {
                 let dir = match direction {
                     UbinLayoutDirection::Horizontal => "Horizontal Stack",
                     UbinLayoutDirection::Vertical => "Vertical Stack",
+                    UbinLayoutDirection::Grid(_, _) => "Grid Layout",
                 };
                 println!("📐 Translating UBIN {} layout → NSStackView with {} spacing", dir, spacing);
                 for child in children {
-                    Self::translate_child(child, style);
+                    Self::translate_child(child, *style);
                 }
             }
-            UbinWidget::ProgressBar { progress, label } => {
+            UbinWidget::ProgressBar { progress, .. } => {
                 println!("📊 ProgressBar {:.0}% → NSProgressIndicator with indeterminate or determinate style", progress * 100.0);
             }
             _ => {
@@ -102,39 +103,38 @@ impl UbinMacOSAdaptor {
     }
 
     fn translate_child(child: &UbinWidget, style: MacOSUIStyle) {
-        Self::translate_to_native(child, style);
+        Self::translate_to_native(child, &style);
     }
 
     /// macOS özel özellikleri UBIN'e çek – diğer platformlara polyfill için hazırla
-    pub fn extract_macos_features(&self) -> Vec<String> {
-        let style = Self::detect_style();
-        let mut features = vec![];
+pub fn extract_macos_features(&self) -> Vec<String> {
+    let style = Self::detect_style();
+    let mut features = vec![];
 
-        match style {
-            MacOSUIStyle::VibrancyEnabled | MacOSUIStyle::MontereyVibrancy | MacOSUIStyle::SonomaAdaptive => {
-                features.push("vibrancy-blur".to_string());
-                features.push("dynamic-depth-shadow".to_string());
-                features.push("adaptive-rounded-corners".to_string());
-                println!("🟢 Extracted macOS vibrancy features: Blur, Depth Shadow, Adaptive Corners");
-            }
-            MacOSUIStyle::BigSurModern | MacOSUIStyle::SonomaAdaptive => {
-                features.push("unified-toolbar".to_string());
-                features.push("sheet-dialog-style".to_string());
-                features.push("traffic-light-buttons-polyfill".to_string());
-                println!("🟢 Extracted Big Sur+ features: Unified Toolbar, Sheet Dialogs");
-            }
-            _ => {}
+    match style {
+        MacOSUIStyle::VibrancyEnabled | MacOSUIStyle::MontereyVibrancy => {
+            features.push("vibrancy-blur".to_string());
+            features.push("dynamic-depth-shadow".to_string());
+            features.push("adaptive-rounded-corners".to_string());
+            println!("🟢 Extracted macOS vibrancy features: Blur, Depth Shadow, Adaptive Corners");
         }
-
-        features
+        MacOSUIStyle::BigSurModern | MacOSUIStyle::SonomaAdaptive => {
+            features.push("unified-toolbar".to_string());
+            features.push("sheet-dialog-style".to_string());
+            features.push("traffic-light-buttons-polyfill".to_string());
+            println!("🟢 Extracted Big Sur+ features: Unified Toolbar, Sheet Dialogs");
+        }
+        _ => {}
     }
+
+    features
+}
 
     /// Runtime'da window'ı macOS native'e uyarla
     pub fn adapt_runtime_window(window: &mut UbinRuntimeWindow) {
         let style = Self::detect_style();
         println!("🔄 Adapting UBIN window '{}' to macOS native (Style: {:?})", window.title, style);
  
-        let style = Self::detect_style();
         Self::translate_to_native(&window.root_widget, &style);
 
         // macOS özel enforce

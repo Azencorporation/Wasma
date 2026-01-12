@@ -3,15 +3,13 @@
 // Tüm platformlar bu ABI'yi konuşacak
 // Eksik özellik kalmayacak – UBIN tamamlayacak
 
-use std::fmt;
-
 /// UBIN Action – Widget'ların tetikleyeceği olaylar
 #[derive(Debug, Clone)]
 pub enum UbinAction {
     NoOp,
     CloseWindow,
-    RenewLease(u32),              // assignment id
-    CustomCallback(u64),          // kullanıcı tanımlı callback ID
+    RenewLease(u32),
+    CustomCallback(u64),
     ToggleDarkMode,
     OpenUrl(String),
 }
@@ -21,7 +19,7 @@ pub enum UbinAction {
 pub enum UbinLayoutDirection {
     Horizontal,
     Vertical,
-    Grid(u32, u32),               // rows, cols – gelecekte
+    Grid(u32, u32),
 }
 
 /// UBIN Portable Widget – Tek ABI, tüm platformlarda aynı
@@ -83,10 +81,15 @@ pub enum UbinWidget {
         progress: f32,  // 0.0 - 1.0
         label: Option<String>,
     },
+    /// DÜZELTME: Divider eklendi
+    Divider {
+        vertical: bool,
+        thickness: u32,
+    },
 }
 
 impl UbinWidget {
-    /// Fluent builder örnekleri – geliştirici kolay kullansın
+    /// Fluent builder örnekleri
     pub fn window(title: impl Into<String>, width: u32, height: u32, child: UbinWidget) -> Self {
         UbinWidget::Window {
             title: title.into(),
@@ -122,5 +125,9 @@ impl UbinWidget {
             spacing: 10,
             children,
         }
+    }
+
+    pub fn divider(vertical: bool, thickness: u32) -> Self {
+        UbinWidget::Divider { vertical, thickness }
     }
 }

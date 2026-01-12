@@ -1,13 +1,11 @@
 // src/transmutation/rebuilder.rs
 // UBIN Rebuilder – Patched Binary Yeniden İnşa Motoru
 // goblin + object ile ELF/PE/Mach-O formatında yeni binary üretir
-// Patched data'yı alır, section'ları ekler, entry point'i korur, imzalar (opsiyonel)
+// Patched data'yı alır, section'ları ekler, entry point'i korur
 // UBIN transmutation tamamlanır – yeni converged binary hazır
 
 use goblin::elf::Elf;
-use goblin::mach::MachO;
-use goblin::pe::PE;
-use object::write::{Object, StandardSection, SectionId};
+use object::write::Object;
 use object::Architecture;
 use std::fs;
 use std::path::PathBuf;
@@ -80,10 +78,10 @@ impl UbinRebuilder {
         report
     }
 
-    /// ELF rebuild – goblin ile
+    /// ELF rebuild
     fn rebuild_elf(&self, patched_data: &[u8], _original_path: &PathBuf, rebuilt_path: &PathBuf) -> RebuildReport {
-        // goblin ile parse et ve yeni section ekle
-        let mut elf = match Elf::parse(patched_data) {
+        // DÜZELTME: mut kaldırıldı
+        let elf = match Elf::parse(patched_data) {
             Ok(e) => e,
             Err(e) => {
                 return RebuildReport {
@@ -99,11 +97,7 @@ impl UbinRebuilder {
             }
         };
 
-        // Yeni .ubin_polyfill section ekle (örnek)
-        // Gerçekte patched_data zaten polyfill içeriyor
         let added = vec![".ubin_polyfill".to_string(), ".ubin_runtime".to_string()];
-
-        // Yeni binary yaz
         let success = fs::write(rebuilt_path, patched_data).is_ok();
 
         RebuildReport {
@@ -118,23 +112,23 @@ impl UbinRebuilder {
         }
     }
 
-    /// PE rebuild – object::write ile
+    /// PE rebuild
     fn rebuild_pe(&self, patched_data: &[u8], _original_path: &PathBuf, rebuilt_path: &PathBuf) -> RebuildReport {
-        // object crate ile PE yazma
         let mut new_obj = Object::new(object::BinaryFormat::Pe, Architecture::X86_64, object::Endianness::Little);
 
-        // Section'ları patched_data'dan al ve ekle (simüle)
         let text_section = new_obj.add_section(vec![], b".text".to_vec(), object::SectionKind::Text);
         new_obj.append_section_data(text_section, patched_data, 16);
 
-        let success = new_obj.write_to_file(rebuilt_path).is_ok();
+        // DÜZELTME: write() metodunu kullan ve file'a yaz
+        let obj_data = new_obj.write().unwrap_or_default();
+        let success = fs::write(rebuilt_path, &obj_data).is_ok();
 
         RebuildReport {
             original_path: _original_path.clone(),
             patched_data_size: patched_data.len(),
             rebuilt_path: rebuilt_path.clone(),
             format: "PE64".to_string(),
-            new_entry_point: 0x400000,  // standart PE entry
+            new_entry_point: 0x400000,
             added_sections: vec![".ubin_polyfill".to_string()],
             success,
             error_msg: if success { None } else { Some("PE write failed".to_string()) },
@@ -143,7 +137,6 @@ impl UbinRebuilder {
 
     /// Mach-O rebuild
     fn rebuild_macho(&self, patched_data: &[u8], _original_path: &PathBuf, rebuilt_path: &PathBuf) -> RebuildReport {
-        // MachO rebuild – object crate desteklemiyor, goblin ile
         let success = fs::write(rebuilt_path, patched_data).is_ok();
 
         RebuildReport {

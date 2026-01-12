@@ -19,6 +19,7 @@ pub enum LogLevel {
 
 /// Global logger – tek instance
 static LOGGER: OnceLock<Mutex<UbinLogger>> = OnceLock::new();
+use crate::log;
 
 pub struct UbinLogger {
     current_level: LogLevel,

@@ -7,29 +7,26 @@
 
 use crate::transmutation::disassembler::DisassemblyReport;
 use crate::transmutation::feature_extractor::ExtractedFeature;
-use goblin::elf::Elf;
-use goblin::mach::MachO;
-use goblin::pe::PE;
 use std::fs;
 use std::path::PathBuf;
 use std::collections::HashSet;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PatchOperation {
     pub feature: ExtractedFeature,
-    pub address: Option<u64>,  // injection adresi
+    pub address: Option<u64>,
     pub patch_type: PatchType,
     pub payload_size: usize,
     pub description: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum PatchType {
-    InlineHook,        // mevcut fonksiyona jump ekle
-    PltPatch,          // PLT entry değiştir
-    SectionInject,     // yeni .ubin_polyfill section ekle
-    CodeCave,          // boş alan bulup kod yaz
-    PolyfillStub,      // UBIN runtime stub'ı
+    InlineHook,
+    PltPatch,
+    SectionInject,
+    CodeCave,
+    PolyfillStub,
 }
 
 #[derive(Debug)]
@@ -79,9 +76,9 @@ impl UbinPatcher {
 
         println!("⚡ UBIN patching started – {} missing features to inject", missing_features.len());
 
-        for feature in missing_features {
+        for feature in &missing_features {
             let op = match feature {
-                ExtractedFeature::HasBlurEffect => self.inject_blur_polyfill(&mut patched_data, &disassembly),
+                ExtractedFeature::HasBlurEffect => self.inject_blur_polyfill(&mut patched_data, disassembly),
                 ExtractedFeature::HasRoundedCorners => self.inject_rounded_corners_polyfill(&mut patched_data),
                 ExtractedFeature::HasShadowEffect => self.inject_shadow_polyfill(&mut patched_data),
                 ExtractedFeature::HasAcrylicMaterial => self.inject_acrylic_polyfill(&mut patched_data),
@@ -106,9 +103,12 @@ impl UbinPatcher {
         // Patched binary'yi yaz
         let success = fs::write(&patched_path, &patched_data).is_ok();
 
+        // DÜZELTME: ops_count önceden al
+        let ops_count = operations.len();
+
         let report = PatchReport {
             original_path: original_path.clone(),
-            patched_path,
+            patched_path: patched_path.clone(),
             operations,
             original_size: data.len() as u64,
             patched_size: patched_data.len() as u64,
@@ -117,7 +117,7 @@ impl UbinPatcher {
         };
 
         if success {
-            println!("🏴☠️ PATCHING SUCCESS – {} operations applied, new binary: {:?}", operations.len(), report.patched_path);
+            println!("🏴☠️ PATCHING SUCCESS – {} operations applied, new binary: {:?}", ops_count, patched_path);
         } else {
             println!("❌ PATCHING FAILED");
         }
@@ -125,22 +125,19 @@ impl UbinPatcher {
         report
     }
 
-    // Polyfill injection metodları – gerçekte assembly/shader kodu enjekte edilecek
-
-    fn inject_blur_polyfill(&self, data: &mut Vec<u8>, _disassembly: &DisassemblyReport) -> Option<PatchOperation> {
+    // Polyfill injection metodları
+    fn inject_blur_polyfill(&self, _data: &mut Vec<u8>, _disassembly: &DisassemblyReport) -> Option<PatchOperation> {
         println!("🎨 Injecting wgpu gaussian blur polyfill for missing blur effect");
-        // Gerçekte: blur shader bytecode'ı .ubin_polyfill section'ına ekle
-        // PLT hook ile render fonksiyonuna yönlendir
         Some(PatchOperation {
             feature: ExtractedFeature::HasBlurEffect,
             address: None,
             patch_type: PatchType::SectionInject,
-            payload_size: 2048,  // simüle
+            payload_size: 2048,
             description: "wGPU blur shader polyfill injected".to_string(),
         })
     }
 
-    fn inject_rounded_corners_polyfill(&self, data: &mut Vec<u8>) -> Option<PatchOperation> {
+    fn inject_rounded_corners_polyfill(&self, _data: &mut Vec<u8>) -> Option<PatchOperation> {
         println!("🔲 Injecting SDF rounded corners clipping");
         Some(PatchOperation {
             feature: ExtractedFeature::HasRoundedCorners,
@@ -151,7 +148,7 @@ impl UbinPatcher {
         })
     }
 
-    fn inject_shadow_polyfill(&self, data: &mut Vec<u8>) -> Option<PatchOperation> {
+    fn inject_shadow_polyfill(&self, _data: &mut Vec<u8>) -> Option<PatchOperation> {
         println!("🌑 Injecting 9-slice dynamic shadow polyfill");
         Some(PatchOperation {
             feature: ExtractedFeature::HasShadowEffect,
@@ -162,7 +159,7 @@ impl UbinPatcher {
         })
     }
 
-    fn inject_acrylic_polyfill(&self, data: &mut Vec<u8>) -> Option<PatchOperation> {
+    fn inject_acrylic_polyfill(&self, _data: &mut Vec<u8>) -> Option<PatchOperation> {
         println!("🎨 Injecting Acrylic-like material polyfill");
         Some(PatchOperation {
             feature: ExtractedFeature::HasAcrylicMaterial,
@@ -173,7 +170,7 @@ impl UbinPatcher {
         })
     }
 
-    fn inject_mica_polyfill(&self, data: &mut Vec<u8>) -> Option<PatchOperation> {
+    fn inject_mica_polyfill(&self, _data: &mut Vec<u8>) -> Option<PatchOperation> {
         println!("🎨 Injecting Mica material polyfill with system backdrop");
         Some(PatchOperation {
             feature: ExtractedFeature::HasMicaMaterial,
@@ -184,7 +181,7 @@ impl UbinPatcher {
         })
     }
 
-    fn inject_vibrancy_polyfill(&self, data: &mut Vec<u8>) -> Option<PatchOperation> {
+    fn inject_vibrancy_polyfill(&self, _data: &mut Vec<u8>) -> Option<PatchOperation> {
         println!("🎨 Injecting Vibrancy polyfill for dynamic background");
         Some(PatchOperation {
             feature: ExtractedFeature::HasVibrancy,
@@ -195,7 +192,7 @@ impl UbinPatcher {
         })
     }
 
-    fn inject_reveal_polyfill(&self, data: &mut Vec<u8>) -> Option<PatchOperation> {
+    fn inject_reveal_polyfill(&self, _data: &mut Vec<u8>) -> Option<PatchOperation> {
         println!("✨ Injecting Fluent reveal highlight on hover");
         Some(PatchOperation {
             feature: ExtractedFeature::HasRevealHighlight,
@@ -206,7 +203,7 @@ impl UbinPatcher {
         })
     }
 
-    fn inject_darkmode_polyfill(&self, data: &mut Vec<u8>) -> Option<PatchOperation> {
+    fn inject_darkmode_polyfill(&self, _data: &mut Vec<u8>) -> Option<PatchOperation> {
         println!("🌙 Injecting system dark mode detection and theme switch");
         Some(PatchOperation {
             feature: ExtractedFeature::HasDarkModeSupport,
@@ -217,7 +214,7 @@ impl UbinPatcher {
         })
     }
 
-    fn inject_hidpi_polyfill(&self, data: &mut Vec<u8>) -> Option<PatchOperation> {
+    fn inject_hidpi_polyfill(&self, _data: &mut Vec<u8>) -> Option<PatchOperation> {
         println!("🔍 Injecting automatic high-DPI scaling");
         Some(PatchOperation {
             feature: ExtractedFeature::HasHighDpiScaling,
@@ -228,7 +225,7 @@ impl UbinPatcher {
         })
     }
 
-    fn inject_csd_polyfill(&self, data: &mut Vec<u8>) -> Option<PatchOperation> {
+    fn inject_csd_polyfill(&self, _data: &mut Vec<u8>) -> Option<PatchOperation> {
         println!("🟢 Injecting client-side decorations for unified titlebar");
         Some(PatchOperation {
             feature: ExtractedFeature::HasCsd,
@@ -239,7 +236,7 @@ impl UbinPatcher {
         })
     }
 
-    fn inject_unified_toolbar_polyfill(&self, data: &mut Vec<u8>) -> Option<PatchOperation> {
+    fn inject_unified_toolbar_polyfill(&self, _data: &mut Vec<u8>) -> Option<PatchOperation> {
         println!("🟢 Injecting unified toolbar style");
         Some(PatchOperation {
             feature: ExtractedFeature::HasUnifiedToolbar,

@@ -3,7 +3,8 @@
 // Geliştirici kolayca karmaşık UI'lar oluşturabilsin
 // Tüm widget'lar builder ile tanımlanır – WASMA ruhuna yakışır şekilde
 
-use super::primitives::{UbinWidget, UbinAction, UbinLayoutDirection};
+use super::primitives::{UbinAction, UbinLayoutDirection};
+use crate::UbinWidget;
 use super::advanced::{UbinAdvancedWidget, TabItem, MenuItem, DialogButton, ListItem, TooltipPosition};
 
 /// UBIN Builder – Ana entry point

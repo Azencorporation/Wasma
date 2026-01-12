@@ -3,15 +3,14 @@
 // Capstone ile disassemble eder, UI/rendering çağrılarını tespit eder
 // x86_64 ve aarch64 destekli – gerçek düşük seviye analiz
 // Convergence ve patcher için ham veri sağlar
-
-use capstone::{Capstone, Instructions, capstone_sys::*};
-use capstone::arch::x86::{ArchMode, ArchSyntax};
-use capstone::arch::arm64::ArchMode as Arm64Mode;
+use capstone::prelude::*;
+use capstone::Capstone;
 use object::read::FileKind;
 use object::{Object, ObjectSection, ObjectSymbol};
-use std::collections::{HashSet, HashMap};
+use std::collections::HashSet;
 use std::path::PathBuf;
 use std::fs;
+use capstone::arch::BuildsCapstone; 
 
 #[derive(Debug, Clone)]
 pub struct DisassemblyReport {
@@ -65,53 +64,21 @@ impl UbinDisassembler {
         let kind = match object::read::FileKind::parse(&data[..]) {
             Ok(k) => k,
             Err(_) => object::read::FileKind::Elf64, // fallback
-            };
-        let (cs_arch, cs_mode) = match kind {
-            FileKind::Elf64 | FileKind::Elf32 => {
-                if data[0x4] == 2 {  // ELF64
-                    (capstone::Arch::X86, capstone::arch::x86::ArchMode::Mode64)
-                } else {
-                    (capstone::Arch::X86, capstone::arch::x86::ArchMode::Mode32)
-                }
-            }
-            FileKind::MachO64 | FileKind::MachOFat64 => {
-                (capstone::Arch::ARM64, capstone::arch::arm64::ArchMode::Arm)
-            }
-            FileKind::Pe64 => {
-                (capstone::Arch::X86, capstone::arch::x86::ArchMode::Mode64)
-            }
-            FileKind::Pe32 => {
-                (capstone::Arch::X86, capstone::arch::x86::ArchMode::Mode32)
-            }
-            _ => {
-                return DisassemblyReport {
-                    path,
-                    arch: "Unsupported format".to_string(),
-                    entry_point: 0,
-                    instructions: vec![],
-                    symbols: vec![],
-                    detected_api_calls: HashSet::new(),
-                    ui_related_calls: vec![],
-                    render_related_calls: vec![],
-                    analysis_success: false,
-                    error_msg: Some("Unsupported binary format".to_string()),
-                };
-            }
         };
 
-         let cs = Capstone::new_raw(cs_arch, cs_mode, capstone::NO_EXTRA_MODE, None)
-            .arch(cs_arch)
-            .mode(cs_mode)
+        // DÜZELTME: Sadece x86_64 için basitleştir
+        let cs = match Capstone::new()
+            .x86()
+            .mode(capstone::arch::x86::ArchMode::Mode64)
             .syntax(capstone::arch::x86::ArchSyntax::Att)
             .detail(true)
             .build()
-            .expect("Failed to create Capstone instance");
         {
-            Ok(cs) => cs,
+            Ok(c) => c,
             Err(e) => {
                 return DisassemblyReport {
                     path,
-                    arch: format!("{:?}", cs_arch),
+                    arch: "x86_64".to_string(),
                     entry_point: 0,
                     instructions: vec![],
                     symbols: vec![],
@@ -129,7 +96,7 @@ impl UbinDisassembler {
             Err(e) => {
                 return DisassemblyReport {
                     path,
-                    arch: format!("{:?}", cs_arch),
+                    arch: "x86_64".to_string(),
                     entry_point: 0,
                     instructions: vec![],
                     symbols: vec![],
@@ -148,7 +115,6 @@ impl UbinDisassembler {
         let mut instructions = vec![];
         let mut ui_calls = vec![];
         let mut render_calls = vec![];
-
         let mut api_calls = HashSet::new();
 
         if let Some(section) = obj.sections().find(|s| s.name() == Ok(".text") || s.kind() == object::SectionKind::Text) {
@@ -157,7 +123,7 @@ impl UbinDisassembler {
 
             if let Ok(insns) = cs.disasm_all(section_data, section_addr) {
                 for insn in insns.iter() {
-                    let addr = insn.address();
+                    let addr: u64 = insn.address();
                     let mnemonic = insn.mnemonic().unwrap_or("???").to_string();
                     let op_str = insn.op_str().unwrap_or("").to_string();
 
@@ -196,7 +162,7 @@ impl UbinDisassembler {
 
         DisassemblyReport {
             path,
-            arch: format!("{:?} {:?}", cs_arch, cs_mode),
+            arch: "x86_64".to_string(),
             entry_point: entry,
             instructions,
             symbols,

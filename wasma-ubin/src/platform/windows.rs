@@ -4,12 +4,12 @@
 // Eksik platformlara (Linux/macOS) polyfill olarak enjekte eder
 // Native Win32 app'ler UBIN kontrolünde çalışır
 
-use crate::core::abi::{UbinWidget, UbinAction, UbinLayoutDirection};
+use crate::core::abi::{UbinWidget, UbinLayoutDirection};
 use crate::core::runtime::UbinRuntimeWindow;
 use std::process::Command;
 
 /// Windows'ta tespit edilen UI framework/stil
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum WindowsUIStyle {
     Win32Classic,
     UWP,
@@ -26,7 +26,7 @@ impl UbinWindowsAdaptor {
     /// Çalışan binary'nin Windows stilini tespit eder
     pub fn detect_style() -> WindowsUIStyle {
         // Manifest veya DLL bağımlılıklarıyla tespit
-        let output = Command::new("powershell")
+        let _output = Command::new("powershell")
             .arg("-Command")
             .arg("Get-Process -Id $PID | Select-Object -ExpandProperty Path")
             .output();
@@ -62,9 +62,9 @@ impl UbinWindowsAdaptor {
                         println!("🟡 Classic Win32 window with Aero Glass fallback");
                     }
                 }
-                Self::translate_child(child, style);
+                Self::translate_child(child, *style);
             }
-            UbinWidget::Button { label, action, .. } => {
+            UbinWidget::Button { label, .. } => {
                 match style {
                     WindowsUIStyle::FluentAcrylic | WindowsUIStyle::FluentMica | WindowsUIStyle::WinUI3 => {
                         println!("🔴 Fluent Button '{}' → Acrylic fill + hover animation + reveal effect", label);
@@ -84,13 +84,14 @@ impl UbinWindowsAdaptor {
                 let dir = match direction {
                     UbinLayoutDirection::Horizontal => "Horizontal StackPanel",
                     UbinLayoutDirection::Vertical => "Vertical StackPanel",
+                    UbinLayoutDirection::Grid(_, _) => "Grid Layout",
                 };
                 println!("📐 Translating UBIN {} layout → WinUI Grid/StackPanel with {} spacing", dir, spacing);
                 for child in children {
-                    Self::translate_child(child, style);
+                    Self::translate_child(child, *style);
                 }
             }
-            UbinWidget::ProgressBar { progress, label } => {
+            UbinWidget::ProgressBar { progress, .. } => {
                 println!("📊 ProgressBar {:.0}% → Fluent progress ring/bar with accent color", progress * 100.0);
             }
             _ => {
@@ -100,7 +101,7 @@ impl UbinWindowsAdaptor {
     }
 
     fn translate_child(child: &UbinWidget, style: WindowsUIStyle) {
-        Self::translate_to_native(child, style);
+        Self::translate_to_native(child, &style);
     }
 
     /// Windows özel özellikleri UBIN'e çek – diğer platformlara polyfill için hazırla
@@ -138,7 +139,6 @@ impl UbinWindowsAdaptor {
         let style = Self::detect_style();
         println!("🔄 Adapting UBIN window '{}' to Windows native (Style: {:?})", window.title, style);
 
-        let style = Self::detect_style();
         Self::translate_to_native(&window.root_widget, &style);
 
         // Windows özel enforce

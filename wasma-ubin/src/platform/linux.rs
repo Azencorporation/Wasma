@@ -4,12 +4,12 @@
 // Eksik platformlara polyfill olarak enjekte eder
 // Native GTK/Qt app'ler UBIN kontrolünde çalışır
 
-use crate::core::abi::{UbinWidget, UbinAction, UbinLayoutDirection};
+use crate::core::abi::{UbinWidget, UbinLayoutDirection};
 use crate::core::runtime::UbinRuntimeWindow;
 use std::process::Command;
 
 /// Linux'ta tespit edilen UI framework
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum LinuxUIFramework {
     Gtk3,
     Gtk4,
@@ -59,9 +59,9 @@ impl UbinLinuxAdaptor {
                 if matches!(framework, LinuxUIFramework::Gtk4) {
                     println!("🟢 Enabling libadwaita HeaderBar + CSD for GNOME feel");
                 }
-                Self::translate_child(child, framework);
+                Self::translate_child(child, *framework);
             }
-            UbinWidget::Button { label, action, .. } => {
+            UbinWidget::Button { label, .. } => {
                 match framework {
                     LinuxUIFramework::Gtk3 | LinuxUIFramework::Gtk4 => {
                         println!("🔴 GTK Button '{}' → Native GtkButton with shadow + rounded", label);
@@ -84,13 +84,14 @@ impl UbinLinuxAdaptor {
                 let dir = match direction {
                     UbinLayoutDirection::Horizontal => "Box Horizontal",
                     UbinLayoutDirection::Vertical => "Box Vertical",
+                    UbinLayoutDirection::Grid(_, _) => "Grid Layout",
                 };
                 println!("📐 Translating UBIN {} layout → GtkBox with {} spacing", dir, spacing);
                 for child in children {
-                    Self::translate_child(child, framework);
+                    Self::translate_child(child, *framework);
                 }
             }
-            UbinWidget::ProgressBar { progress, label } => {
+            UbinWidget::ProgressBar { progress, .. } => {
                 println!("📊 ProgressBar {:.0}% → GtkProgressBar with smooth fill", progress * 100.0);
             }
             _ => {
@@ -100,7 +101,7 @@ impl UbinLinuxAdaptor {
     }
 
     fn translate_child(child: &UbinWidget, framework: LinuxUIFramework) {
-        Self::translate_to_native(child, framework);
+        Self::translate_to_native(child, &framework);
     }
 
     /// Linux özel özellikleri UBIN'e çek – diğer platformlara polyfill için hazırla
@@ -133,7 +134,6 @@ impl UbinLinuxAdaptor {
         let framework = Self::detect_framework();
         println!("🔄 Adapting UBIN window '{}' to Linux native (Framework: {:?})", window.title, framework);
         
-        let framework = Self::detect_framework();
         Self::translate_to_native(&window.root_widget, &framework);
 
         // Linux özel enforce
