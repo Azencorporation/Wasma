@@ -1,0 +1,35 @@
+name = app.name
+uri_appimg = file://usr/share/pixelevel/map/12x12.png *// goruntu yol
+uri_shortcut = file://Desktop *// shortcut yolu
+cpu_perception = 1 *// gui uzerinden tanimlanabilir ondan bu sayi degisebilir
+cpu_affinity = perception { 100 resource_max : 10 } bitmax *"20" *// tanimlanmiscekirdek basina kullanim bitmax siniri
+cpu_core_serve = "1" affinity_default *// sunucu icin ayrilmis bellek istege bagli dinamik olarakda ayarlanabilir "dynamic" kullanim sekli affinity gore default sekilde ayarlanir ama isterseniz ayri bicimdede tanimlayabilirsiniz
+gpu_perp = "VRAM:allocation:size_bydefault = 1024" *// uygulama icin ayrilmis max gpu bellegi allocation yerine locate edilebilir "location" degeri kullanilmali ama bellekin nerde tahsis edilicegini dogrudan tahsis edilicek bir alan uzerinden yapabilirsiniz ama bu sorunlu oldugundan allocation onerilir sizebydefault alan max kullanim seklini default degil sizebycustom sizebyinsection sizebyprop gibi dogrudan tablo uzerinden custom veya propa gore belirlenebilir
+gpu_using = "1024" { 100 resource_max : 15 } bitwidthed *"25" *// max kullanim sekli ve bit withed genisligi
+ram_using = "DDR5" "1024MB" "*cache_resolved:swaponline" *// ram kullanim alani belirleniyor default olarak ama cache icin ayrilmis swap kullanimi istiyorsan online istemiyorsan offline yapabilirsin
+ram_used_bitwitdh = "1024MB" "bit_width : 15" *cache_resourceing : "20%" *// bit witdh basina belirlenmis ram kullanimi cache kaynak kullanim faiz ile belirlemek ici
+uri_app_source = file://usr/bin/app *permission_check *POLICY _ENV *// policy set env app kaynak calistirma
+uri_app_resource = file://local/bin/app,file//bin/app *// farkli varyasyonlara gore secim istege bagli
+permission_check = URI:PERMISSION_DEVEL://string : permission_devel *USER *// user seviyesinde permission gelistirmeye acik yani dizin yolu $HOME/$USE_CONFIG/permission_app/source env ortamlarindan yol cekilir eger permission_sys veya permission_preset permission_pinning permission_purning gibi varyasyonlar ise dizin yollari farklidir
+// * ALTDA belirtilen format turu sourcedir manifest icinde veya disinda kullanilabilir
+//* manifest icinde kullanildiginda [source] disinda kullandiginda source* baslayan dosyalar olmali custom permission variables gore degisebilir
+*// ornek dizin yolari
+*// permission_sys = $ROOT/lib/share/permission/source
+*// permission_pinning = $ROOT/lib/share/permissioner/source_pinning *// izinler chattr dir degistirilme hakki kullanici isterse munkundur
+*// permission_purning = $ROOT/lib/share/permissionpurnering/source_purnering *// izinler dinamiktir her uygulama az izinle dagitilir sonradan izinler vermek zorunda kalabilirsin
+*// izin formati applist bagli ama 
+*// USE_ETHERNET_CONNECTION = 1 *// ethernet baglantisi kullansimi uygulama
+*// USE_WIFI_CONNECTION = 1 *// wifi baglantisi kullansimi uygulama
+*// USE_CHATTR_DISABLER = 0 *// pinnning disable edilsinmi eger uygulama istiyorsa vveya sen istiyorsan
+*// USE_FILE_EXCEPTION = *file://Documents *// sadece belirli dosya alani icin izin vermek *&ALL *// tum dosya alanlarina erisim sorgulu *file://* *// sorgusuz sualsiz erisim
+*// USE_FILE_WITDH = 20 GB *// uygulama genisligini belirleme defaultde bu false gelir cunku uygulama sorunlarina neden olabilir ve gereksizdir cogunlukla
+*// USE_WEB_RESOLVEING = http://brave.com *// belirli web cozumleme kaynagi ama bu ozellikte sadece uygulama belirli domainle etkilesime gecmesini belirlersin uygulama etkilesim yapisi bozulabilir ondan ALL_DEFAULT olarakda kalabilir isterseniz.
+*// USE_USB_CONNECTIONAL = driver_disk_iot *// usb driver izinleri tumunu kapsar sekilde erisim icin *ALL_DRIVER sadece belirli suruculer icin driver_disk_iot: disk tabanli usb suruculerine ziin driver_ethernet_usb_port : ethernet tabanli usb ceviriciler driver_usb_media : sadece media tabanli izinler driver_usb_plug_and_play  : plug_and play izinler icin
+*// USE_USB_NET = 1 *// usb uzerinden ag erisime izin vermek icin 0 erisim kapali 1 erisim acik
+*// USE_USB_PLUG_AND_PLAY = ALL *// plug and play cihazlar icin belirli erisim mesela "microphone" mikrofon tabanli erisim "camera" usb camera modulleri "mouse" sadece mouse modulleri "midi" midi tabanli cihaz erisimleri "ALL" tum erisimler
+*// USE_WEBCAM_OPENED = &step_by_device = :use_webcam *// gerektiginde webcam erisimini ayarlamak icin "use_webcam" her sekilde erisim ayarlamak icin "ALL" step_by_device olmadan
+*// USE_MICROPHONE = ALL *// mikrofon erisimi tek seferlik erisim "JUSTING" erisime kapali "NO" her zaman erisim "ALL"
+*// USE_AUDIO = ALL *// ses erisimi tek seferlik erisim "JUSTING" erisime kapali "NO" gereken durumlarda erisim "OPENED_ALL" her zaman erisim "ALL"
+
+
+

@@ -1,11 +1,11 @@
 [package]
 name = "wasma-ubin"
-version = "0.1.0-alpha"
+version = "1.1.0-stable-beta1"
 edition = "2021"
 authors = ["Zaman Huseyinli <zamanhuseynli23@gmail.com>", "AUO Lejyon"]
 description = "WASMA Unified Binary Interface – Tek otorite, sınırsız egemenlik"
 repository = "https://github.com/Azccriminal/wasma-ubin"
-license = "MIT"
+license = "Apache-2"
 keywords = ["gui", "abi", "transmutation", "convergence", "wasma"]
 categories = ["gui", "development-tools", "os"]
 readme = "README.md"
