@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use crate::parser::{WasmaConfig, Protocol};
+use crate::parser::WasmaConfig;
 use crate::window_multitary::WindowMultitary;
 use crate::window_singularity::{WindowSingularity, SINGULARITY_LOCK};
 use std::sync::atomic::Ordering;
@@ -119,12 +119,14 @@ impl WindowClient {
 }
 
 // Helper structures for VRAM operations
+#[allow(dead_code)]
 struct WasmaVramWrite {
     offset: usize,
     size: usize,
     bounds: (i32, i32, u32, u32),
 }
 
+#[allow(dead_code)]
 struct WasmaFallbackRender {
     data_size: usize,
     bounds: (i32, i32, u32, u32),

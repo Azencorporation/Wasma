@@ -2,7 +2,11 @@
 // Core Library Module
 // January 14, 2026
 
+#[path = "../../wsdg-app-manifest/source_parser.rs"]
+pub mod source_parser;
 pub mod parser;
+pub use source_parser as source;
+
 pub mod window_handling;
 pub mod window_client;
 pub mod window_multitary;
@@ -325,7 +329,7 @@ mod tests {
 
     #[test]
     fn test_wasma_builder() {
-        let builder = WasmaCoreBuilder::new()
+        let _builder = WasmaCoreBuilder::new()
             .with_resource_mode(ResourceMode::Manual);
         
         // Note: This will fail without a valid config file

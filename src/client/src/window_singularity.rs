@@ -1,4 +1,4 @@
-use crate::protocols::{WasmaConfig, ProtocolType};
+use crate::parser::{WasmaConfig, Protocol};
 use std::sync::atomic::{AtomicBool, Ordering};
 
 pub static SINGULARITY_LOCK: AtomicBool = AtomicBool::new(false);
@@ -39,7 +39,7 @@ impl WindowSingularity {
         (0, 0, self.screen_width, self.screen_height)
     }
 
-    pub fn validate_protocol_focus(&self, proto: ProtocolType) -> bool {
+    pub fn validate_protocol_focus(&self, proto: Protocol) -> bool {
         let active_proto = &self.config.uri_handling.protocols[self.target_id as usize].protocol;
         active_proto == &proto
     }
@@ -51,10 +51,10 @@ impl WindowSingularity {
     pub fn apply_hardware_acceleration(&self) {
         if let Some(proto) = self.config.uri_handling.protocols.get(self.target_id as usize) {
             match proto.protocol {
-                ProtocolType::Grpc => {
+                Protocol::Grpc => {
                     // gRPC/HTTP2 HPACK compression optimization
                 },
-                ProtocolType::Tor => {
+                Protocol::Tor => {
                     // Tor cell-buffer prioritizing
                 },
                 _ => {}

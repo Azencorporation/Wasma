@@ -4,7 +4,6 @@
 
 use clap::{Parser, Subcommand, ValueEnum};
 use wasma_ubin::*;
-use std::path::PathBuf;
 
 /// WASMA-UBIN – Unified Binary Interface System
 /// 
@@ -118,6 +117,7 @@ enum Commands {
     /// Outputs a detailed report of detected capabilities.
     /// 
     /// Example: ubin analyze myapp --disassemble --format json
+    #[cfg(feature = "transmutation")]
     #[command(visible_alias = "a")]
     Analyze {
         /// Path to binary file
@@ -150,6 +150,7 @@ enum Commands {
     /// corners, shadows, etc). Can optionally rebuild the binary.
     /// 
     /// Example: ubin patch myapp --features blur,acrylic,rounded --rebuild
+    #[cfg(feature = "transmutation")]
     #[command(visible_alias = "p")]
     Patch {
         /// Path to input binary file
@@ -309,6 +310,7 @@ fn main() {
                 max_fps,
             );
         }
+        #[cfg(feature = "transmutation")]
         Commands::Analyze {
             path,
             disassemble,
@@ -317,6 +319,7 @@ fn main() {
         } => {
             analyze_binary(path, disassemble, format, output);
         }
+        #[cfg(feature = "transmutation")]
         Commands::Patch {
             input,
             output,
@@ -380,6 +383,7 @@ fn run_eternal_dominion(
     runtime.run_eternal_dominion();
 }
 
+#[cfg(feature = "transmutation")]
 fn analyze_binary(path: PathBuf, disassemble: bool, format: OutputFormat, output: Option<PathBuf>) {
     info(&format!("🔍 Analyzing binary: {:?}", path));
 
@@ -423,6 +427,7 @@ fn analyze_binary(path: PathBuf, disassemble: bool, format: OutputFormat, output
     }
 }
 
+#[cfg(feature = "transmutation")]
 fn format_text_report(report: &wasma_ubin::transmutation::BinaryFeatureReport) -> String {
     let mut output = String::new();
     output.push_str("\n╔══════════════════════════════════════════════════════════╗\n");
@@ -456,6 +461,7 @@ fn format_text_report(report: &wasma_ubin::transmutation::BinaryFeatureReport) -
     output
 }
 
+#[cfg(feature = "transmutation")]
 fn format_yaml_report(report: &wasma_ubin::transmutation::BinaryFeatureReport) -> String {
     format!(
         "# UBIN Feature Analysis Report\npath: {:?}\nplatform: {:?}\nframework: {}\nsymbol_count: {}\nfeatures:\n{}\nsuccess: {}\n",
@@ -471,6 +477,7 @@ fn format_yaml_report(report: &wasma_ubin::transmutation::BinaryFeatureReport) -
     )
 }
 
+#[cfg(feature = "transmutation")]
 fn patch_binary(input: PathBuf, _output: Option<PathBuf>, features: Option<String>, rebuild: bool, _verify: bool) {
     info(&format!("⚡ Patching binary: {:?}", input));
 

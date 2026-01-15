@@ -29,7 +29,6 @@ pub struct UbinRuntime {
     convergence_engine: Mutex<UbinConvergenceEngine>,
     windows: HashMap<u32, UbinRuntimeWindow>,
     next_window_id: u32,
-    start_time: Instant,
     running: bool,
 }
 
@@ -45,7 +44,6 @@ impl UbinRuntime {
             convergence_engine: Mutex::new(convergence_engine),
             windows: HashMap::new(),
             next_window_id: 1,
-            start_time: Instant::now(),
             running: true,
         }
     }

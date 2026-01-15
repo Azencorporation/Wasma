@@ -1,5 +1,6 @@
 use std::collections::HashMap;
-use crate::protocols::{WasmaConfig, ProtocolType};
+use crate::parser::WasmaConfig;
+
 
 #[derive(Debug, Clone)]
 pub struct Viewport {

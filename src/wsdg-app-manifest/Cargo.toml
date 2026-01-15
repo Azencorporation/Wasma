@@ -1,0 +1,45 @@
+[package]
+name = "wsdg-app-manifest"
+version = "1.2.0-beta1"
+edition = "2021"
+authors = ["WASMA Development Team"]
+description = "WASMA Manifest and Permission Source Parser"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/wasma/wasma"
+keywords = ["manifest", "parser", "permissions", "wasma"]
+categories = ["parsing", "config"]
+
+[lib]
+name = "wsdg_app_manifest"
+path = "lib.rs"
+
+[dependencies]
+# Error handling
+thiserror = "1.0"
+
+# File system and path utilities
+dirs = "5.0"
+
+# Backend integration
+wbackend = { path = "../wbackend" }
+
+# Serialization (optional, if needed for future features)
+serde = { version = "1.0", features = ["derive"], optional = true }
+serde_json = { version = "1.0", optional = true }
+
+[dev-dependencies]
+tempfile = "3.8"
+pretty_assertions = "1.4"
+
+[features]
+default = []
+serialization = ["serde", "serde_json"]
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+
+[profile.dev]
+opt-level = 1
+debug = true

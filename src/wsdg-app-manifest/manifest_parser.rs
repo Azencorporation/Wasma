@@ -8,21 +8,41 @@ use thiserror::Error;
 use wbackend::ExecutionMode;
 
 #[derive(Debug, Error)]
+/// Error type for manifest parsing operations.
 pub enum ManifestError {
+    /// Manifest file not found.
     #[error("Manifest file not found: {0}")]
     FileNotFound(String),
     
+    /// Failed to read manifest file.
     #[error("Failed to read manifest: {0}")]
     ReadError(String),
     
+    /// Failed to parse manifest at a specific line.
     #[error("Failed to parse manifest line {line}: {reason}")]
-    ParseError { line: usize, reason: String },
+    ParseError { 
+        /// Line number where parsing failed.
+        line: usize, 
+        /// Reason for parsing failure.
+        reason: String 
+    },
     
+    /// Missing required field in manifest.
     #[error("Missing required field: {0}")]
     MissingField(String),
     
-1    #[error("Invalid value for {field}: {reason}")]
-    InvalidValue { field: String, reason: String },
+    /// Invalid value for a field.
+    #[error("Invalid value for {field}: {reason}")]
+    InvalidValue { 
+        /// Field name with invalid value.
+        field: String, 
+        /// Reason the value is invalid.
+        reason: String 
+    },
+    
+    /// IO error during manifest operations.
+    #[error("IO error: {0}")]
+    IoError(#[from] std::io::Error),
 }
 
 /// WASMA Application Manifest Structure
@@ -42,111 +62,173 @@ pub struct WasmaManifest {
 }
 
 #[derive(Debug, Clone, Default)]
+/// Application metadata information.
 pub struct AppMetadata {
+    /// Application name.
     pub name: String,
+    /// URI to application image.
     pub uri_appimg: Option<String>,
+    /// URI to application shortcut.
     pub uri_shortcut: Option<String>,
+    /// URI to application source.
     pub uri_app_source: Option<String>,
+    /// URIs to application resources.
     pub uri_app_resource: Vec<String>,
 }
 
 #[derive(Debug, Clone)]
+/// Resource configuration for the application.
 pub struct ResourceConfig {
-    // CPU Configuration
+    /// CPU perception/performance setting.
     pub cpu_perception: u32,
+    /// CPU affinity configuration.
     pub cpu_affinity: CpuAffinityConfig,
+    /// CPU core serving mode.
     pub cpu_core_serve: CpuCoreServe,
     
-    // GPU Configuration
+    /// GPU configuration.
     pub gpu_perp: GpuConfig,
+    /// GPU usage mode.
     pub gpu_using: GpuUsing,
     
-    // RAM Configuration
+    /// RAM usage configuration.
     pub ram_using: RamConfig,
+    /// RAM bitwidth used.
     pub ram_used_bitwidth: RamBitwidth,
+    
+    /// Execution mode for the application.
+    pub execution_mode: ExecutionMode,
 }
 
 #[derive(Debug, Clone)]
+/// CPU affinity configuration.
 pub struct CpuAffinityConfig {
+    /// Maximum resource allocation.
     pub resource_max: u32,
+    /// Bitmask maximum.
     pub bitmax: u32,
 }
 
 #[derive(Debug, Clone)]
+/// CPU core serving modes.
 pub enum CpuCoreServe {
+    /// Static number of cores.
     Static(u32),
+    /// Dynamic core allocation.
     Dynamic,
+    /// Default affinity.
     AffinityDefault,
 }
 
 #[derive(Debug, Clone)]
+/// GPU configuration settings.
 pub struct GpuConfig {
+    /// Type of GPU allocation.
     pub allocation_type: GpuAllocationType,
+    /// GPU size mode.
     pub size_mode: GpuSizeMode,
+    /// Default GPU size in MB.
     pub default_size: u64, // in MB
 }
 
 #[derive(Debug, Clone)]
+/// GPU allocation types.
 pub enum GpuAllocationType {
+    /// Standard allocation.
     Allocation,
+    /// Location-based allocation.
     Location(String),
 }
 
 #[derive(Debug, Clone)]
+/// GPU size modes.
 pub enum GpuSizeMode {
+    /// Use default size.
     ByDefault,
+    /// Use custom size.
     ByCustom,
+    /// Size by section.
     BySection,
+    /// Size by proportion.
     ByProp,
 }
 
 #[derive(Debug, Clone)]
+/// GPU usage configuration.
 pub struct GpuUsing {
+    /// GPU size in MB.
     pub size: u64, // in MB
+    /// Maximum resource allocation.
     pub resource_max: u32,
+    /// GPU bitwidth.
     pub bitwidth: u32,
 }
 
 #[derive(Debug, Clone)]
+/// RAM configuration settings.
 pub struct RamConfig {
+    /// RAM type (e.g., DDR4, DDR5).
     pub ram_type: String, // DDR4, DDR5, etc.
+    /// RAM size in MB.
     pub size: u64, // in MB
+    /// Cache mode for RAM.
     pub cache_mode: CacheMode,
 }
 
 #[derive(Debug, Clone)]
+/// RAM cache modes.
 pub enum CacheMode {
+    /// Swap online.
     SwapOnline,
+    /// Swap offline.
     SwapOffline,
+    /// Resolved cache.
     Resolved,
 }
 
 #[derive(Debug, Clone)]
+/// RAM bitwidth configuration.
 pub struct RamBitwidth {
+    /// RAM size in MB.
     pub size: u64, // in MB
+    /// RAM bit width.
     pub bit_width: u32,
+    /// Cache resource percentage.
     pub cache_resourceing: f32, // percentage
 }
 
 #[derive(Debug, Clone)]
+/// Permission reference configuration.
 pub struct PermissionReference {
+    /// Type of permission check.
     pub permission_check: PermissionCheckType,
+    /// Optional path to permission source.
     pub source_path: Option<String>,
 }
 
 #[derive(Debug, Clone)]
+/// Types of permission checks.
 pub enum PermissionCheckType {
+    /// Development permissions.
     PermissionDevel,
+    /// System permissions.
     PermissionSys,
+    /// Preset permissions.
     PermissionPreset,
+    /// Pinning permissions.
     PermissionPinning,
+    /// Purning permissions.
     PermissionPurning,
 }
 
 #[derive(Debug, Clone, Default)]
+/// Window configuration for the application.
 pub struct WindowConfig {
+    /// Window width.
     pub width: Option<u32>,
+    /// Window height.
     pub height: Option<u32>,
+    /// Whether the window is resizable.
     pub resizable: bool,
 }
 
@@ -156,10 +238,12 @@ pub struct ManifestParser {
 }
 
 impl ManifestParser {
+    /// Create a new ManifestParser with the given path.
     pub fn new(path: String) -> Self {
         Self { path }
     }
 
+    /// Load and parse the manifest from the file.
     pub fn load(&self) -> Result<WasmaManifest, ManifestError> {
         if !Path::new(&self.path).exists() {
             return Err(ManifestError::FileNotFound(self.path.clone()));
@@ -171,7 +255,8 @@ impl ManifestParser {
         self.parse(&content)
     }
 
-    fn parse(&self, content: &str) -> Result<WasmaManifest, ManifestError> {
+    /// Parse manifest content from a string.
+    pub fn parse(&self, content: &str) -> Result<WasmaManifest, ManifestError> {
         let mut app = AppMetadata::default();
         let mut cpu_perception = 1;
         let mut cpu_affinity = CpuAffinityConfig { resource_max: 10, bitmax: 20 };
@@ -200,7 +285,8 @@ impl ManifestParser {
             permission_check: PermissionCheckType::PermissionDevel,
             source_path: None,
         };
-        let mut window = WindowConfig::default();
+        let window = WindowConfig::default();
+        let mut execution_mode = ExecutionMode::GpuPreferred; // Default execution mode
 
         for (line_num, line) in content.lines().enumerate() {
             let line = line.trim();
@@ -252,6 +338,9 @@ impl ManifestParser {
                     "permission_check" => {
                         permission_ref = self.parse_permission_check(value, line_num)?;
                     }
+                    "execution_mode" => {
+                        execution_mode = self.parse_execution_mode(value, line_num)?;
+                    }
                     _ => {
                         // Unknown key, skip
                     }
@@ -269,10 +358,23 @@ impl ManifestParser {
                 gpu_using,
                 ram_using,
                 ram_used_bitwidth: ram_bitwidth,
+                execution_mode,
             },
             permissions: permission_ref,
             window,
         })
+    }
+
+    fn parse_execution_mode(&self, value: &str, _line_num: usize) -> Result<ExecutionMode, ManifestError> {
+        let value = self.extract_value(value).to_lowercase();
+        
+        match value.as_str() {
+            "cpu" | "cpu_only" | "cpuonly" => Ok(ExecutionMode::CpuOnly),
+            "gpu" | "gpu_only" | "gpuonly" => Ok(ExecutionMode::GpuOnly),
+            "gpu_preferred" | "gpu_pref" | "gpupreferred" => Ok(ExecutionMode::GpuPreferred),
+            "hybrid" => Ok(ExecutionMode::Hybrid),
+            _ => Ok(ExecutionMode::GpuPreferred), // default
+        }
     }
 
     fn split_key_value<'a>(&self, line: &'a str) -> Option<(&'a str, &'a str)> {
@@ -312,7 +414,7 @@ impl ManifestParser {
         })
     }
 
-    fn parse_cpu_affinity(&self, value: &str, line_num: usize) -> Result<CpuAffinityConfig, ManifestError> {
+    fn parse_cpu_affinity(&self, value: &str, _line_num: usize) -> Result<CpuAffinityConfig, ManifestError> {
         // Parse: perception { 100 resource_max : 10 } bitmax *"20"
         let mut resource_max = 10;
         let mut bitmax = 20;
@@ -330,7 +432,7 @@ impl ManifestParser {
         Ok(CpuAffinityConfig { resource_max, bitmax })
     }
 
-    fn parse_cpu_core_serve(&self, value: &str, line_num: usize) -> Result<CpuCoreServe, ManifestError> {
+    fn parse_cpu_core_serve(&self, value: &str, _line_num: usize) -> Result<CpuCoreServe, ManifestError> {
         let value = self.extract_value(value);
         
         if value.contains("dynamic") || value.contains("\"dynamic\"") {
@@ -348,7 +450,7 @@ impl ManifestParser {
         }
     }
 
-    fn parse_gpu_perp(&self, value: &str, line_num: usize) -> Result<GpuConfig, ManifestError> {
+    fn parse_gpu_perp(&self, value: &str, _line_num: usize) -> Result<GpuConfig, ManifestError> {
         // Parse: "VRAM:allocation:size_bydefault = 1024"
         let value = self.extract_value(value).trim_matches('"').to_string();
         
@@ -382,7 +484,7 @@ impl ManifestParser {
         })
     }
 
-    fn parse_gpu_using(&self, value: &str, line_num: usize) -> Result<GpuUsing, ManifestError> {
+    fn parse_gpu_using(&self, value: &str, _line_num: usize) -> Result<GpuUsing, ManifestError> {
         // Parse: "1024" { 100 resource_max : 15 } bitwidthed *"25"
         let mut size = 1024;
         let mut resource_max = 15;
@@ -410,7 +512,7 @@ impl ManifestParser {
         Ok(GpuUsing { size, resource_max, bitwidth })
     }
 
-    fn parse_ram_using(&self, value: &str, line_num: usize) -> Result<RamConfig, ManifestError> {
+    fn parse_ram_using(&self, value: &str, _line_num: usize) -> Result<RamConfig, ManifestError> {
         // Parse: "DDR5" "1024MB" "*cache_resolved:swaponline"
         let parts: Vec<&str> = value.split_whitespace().collect();
         
@@ -441,7 +543,7 @@ impl ManifestParser {
         Ok(RamConfig { ram_type, size, cache_mode })
     }
 
-    fn parse_ram_bitwidth(&self, value: &str, line_num: usize) -> Result<RamBitwidth, ManifestError> {
+    fn parse_ram_bitwidth(&self, value: &str, _line_num: usize) -> Result<RamBitwidth, ManifestError> {
         // Parse: "1024MB" "bit_width : 15" *cache_resourceing : "20%"
         let mut size = 1024;
         let mut bit_width = 15;
@@ -467,7 +569,7 @@ impl ManifestParser {
         Ok(RamBitwidth { size, bit_width, cache_resourceing })
     }
 
-    fn parse_permission_check(&self, value: &str, line_num: usize) -> Result<PermissionReference, ManifestError> {
+    fn parse_permission_check(&self, value: &str, _line_num: usize) -> Result<PermissionReference, ManifestError> {
         // Parse: URI:PERMISSION_DEVEL://string : permission_devel *USER
         let value_lower = value.to_lowercase();
         
@@ -538,6 +640,7 @@ mod tests {
 name = TestApp
 cpu_perception = 2
 ram_using = "DDR5" "2048MB" "*cache_resolved:swaponline"
+execution_mode = hybrid
         "#;
 
         let parser = ManifestParser::new("test.manifest".to_string());
@@ -546,5 +649,19 @@ ram_using = "DDR5" "2048MB" "*cache_resolved:swaponline"
         assert_eq!(manifest.app.name, "TestApp");
         assert_eq!(manifest.resources.cpu_perception, 2);
         assert_eq!(manifest.resources.ram_using.size, 2048);
+        assert!(matches!(manifest.resources.execution_mode, ExecutionMode::Hybrid));
+    }
+
+    #[test]
+    fn test_execution_mode_parsing() {
+        let content = r#"
+name = TestApp
+execution_mode = cpu_only
+        "#;
+
+        let parser = ManifestParser::new("test.manifest".to_string());
+        let manifest = parser.parse(content).unwrap();
+        
+        assert!(matches!(manifest.resources.execution_mode, ExecutionMode::CpuOnly));
     }
 }

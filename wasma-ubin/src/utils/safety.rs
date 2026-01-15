@@ -9,7 +9,6 @@ use crate::utils::logging::{critical, debug, info};
 static SAFETY_INITIALIZED: std::sync::Once = std::sync::Once::new();
 
 pub struct UbinSafetyGuard {
-    panic_count: Arc<Mutex<u32>>,
 }
 
 impl UbinSafetyGuard {
