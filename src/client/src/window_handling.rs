@@ -14,9 +14,9 @@ use iced::{
 use iced::window::{Id as WindowId, Position};
 
 // Diğer modüllerden import (aynı crate içinde)
-use crate::protocols::{ProtocolManager, WasmaConfig, Protocol};
-use crate::manifest::{ManifestParser, WasmaManifest, CpuCoreServe};
-use crate::source::{SourceParser, PermissionSource};
+use crate::parser::{ConfigParser, WasmaConfig, Protocol};
+use wsdg_app_manifest::manifest_parser::{ManifestParser, CpuCoreServe};
+use wsdg_app_manifest::source_parser::{SourceParser, PermissionSource, FileException};
 
 // ============================================================================
 // PENCERE YAPILARI
@@ -63,33 +63,29 @@ pub enum BackendType {
 /// Kaynak limitleri - WBackend + manifest + wasma.in.conf
 #[derive(Debug, Clone)]
 pub struct ResourceLimits {
-    pub max_memory_mb: Option<u64>,
-    pub max_cpu_percent: Option<f32>,
-    pub max_gpu_memory_mb: Option<u64>,
-    pub pixel_load_limit: Option<u32>,
-    pub content_size_limit: Option<u64>,
-    pub renderer: String,
-    pub execution_mode: ExecutionMode,
+    // wbackend-compatible fields (zorunlu)
+    pub max_memory_mb: u64,
+    pub max_gpu_memory_mb: u64,
     pub cpu_cores: Vec<usize>,
-    pub lease_duration_secs: Option<u64>,
+    pub lease_duration: Duration,
+     pub execution_mode: Option<ExecutionMode>,
+    // WASMA-specific fields (opsiyonel)
+    pub renderer: String,
+    pub pixel_load_limit: u32,
 }
-
 impl Default for ResourceLimits {
     fn default() -> Self {
         Self {
-            max_memory_mb: Some(512),
-            max_cpu_percent: Some(50.0),
-            max_gpu_memory_mb: Some(256),
-            pixel_load_limit: Some(50),
-            content_size_limit: Some(1024 * 1024 * 10),
-            renderer: "cpu_renderer".to_string(),
-            execution_mode: ExecutionMode::GpuPreferred,
+            max_memory_mb: 512,
+            max_gpu_memory_mb: 256,
             cpu_cores: Vec::new(),
-            lease_duration_secs: Some(30),
+            execution_mode: Some(ExecutionMode::GpuPreferred),
+            lease_duration: Duration::from_secs(30),
+            renderer: "cpu_renderer".to_string(),
+            pixel_load_limit: 50,
         }
     }
 }
-
 /// İzinler - source'tan gelen
 #[derive(Debug, Clone)]
 pub struct PermissionScope {
@@ -180,25 +176,20 @@ impl WindowHandler {
     }
 
     /// wasma.in.conf yükle
-    pub fn load_wasma_config(&self, config_path: &str) -> Result<(), String> {
-        let mut protocol_mgr = ProtocolManager::new(Some(config_path.to_string()));
-        protocol_mgr.load_config()
-            .map_err(|e| format!("Config yüklenemedi: {:?}", e))?;
-        
-        protocol_mgr.validate()
-            .map_err(|e| format!("Config geçersiz: {:?}", e))?;
+pub fn load_wasma_config(&self, config_path: &str) -> Result<(), String> {
+    let parser = ConfigParser::new(Some(config_path.to_string()));
+    let config = parser.load()
+        .map_err(|e| format!("Config yüklenemedi: {:?}", e))?;
+    
+    parser.validate(&config)
+        .map_err(|e| format!("Config geçersiz: {:?}", e))?;
 
-        let config = protocol_mgr.get_config()
-            .ok_or("Config bulunamadı")?
-            .clone();
+    let mut wasma_cfg = self.wasma_config.lock().unwrap();
+    *wasma_cfg = Some(config);
 
-        let mut wasma_cfg = self.wasma_config.lock().unwrap();
-        *wasma_cfg = Some(config);
-
-        println!("✅ WASMA Config yüklendi: {}", config_path);
-        Ok(())
-    }
-
+    println!("✅ WASMA Config yüklendi: {}", config_path);
+    Ok(())
+}
     /// Pencere oluştur - manifest + source + wasma.in.conf birleşimi
     pub fn create_window(
         &self,
@@ -222,8 +213,7 @@ impl WindowHandler {
         // 2. wasma.in.conf'tan renderer ve scope_level al
         if let Some(ref wasma_cfg) = *self.wasma_config.lock().unwrap() {
             resource_limits.renderer = wasma_cfg.resource_limits.renderer.clone();
-            resource_limits.pixel_load_limit = Some(wasma_cfg.resource_limits.scope_level);
-            
+            resource_limits.pixel_load_limit = wasma_cfg.resource_limits.scope_level;            
             // Protocol izinlerini ekle
             for proto_cfg in &wasma_cfg.uri_handling.protocols {
                 let proto_str = match proto_cfg.protocol {
@@ -241,18 +231,24 @@ impl WindowHandler {
         // 3. WBackend Assignment oluştur
         let assignment_id = window_id as u32;
         let mut assignment = Assignment::new(assignment_id);
-        
-        assignment.execution_mode = resource_limits.execution_mode;
-        assignment.ram_limit = (resource_limits.max_memory_mb.unwrap_or(512) * 1024 * 1024) as usize;
-        assignment.vram_limit = (resource_limits.max_gpu_memory_mb.unwrap_or(256) * 1024 * 1024) as usize;
-        
+        // Bu değişkeni kullanmadan önce tanımla:
+        let new_limits = ResourceLimits {
+         max_memory_mb: 512,
+         max_gpu_memory_mb: 256,
+         cpu_cores: Vec::new(),
+         lease_duration: Duration::from_secs(30),
+         execution_mode: Some(ExecutionMode::GpuPreferred),
+         renderer: "cpu_renderer".to_string(),
+         pixel_load_limit: 50,
+};
+        assignment.execution_mode = resource_limits.execution_mode.unwrap_or(ExecutionMode::GpuPreferred);
+        assignment.ram_limit = (new_limits.max_memory_mb * 1024 * 1024) as usize;
+        assignment.vram_limit = (new_limits.max_gpu_memory_mb * 1024 * 1024) as usize;        
         if !resource_limits.cpu_cores.is_empty() {
             assignment.cpu_cores = resource_limits.cpu_cores.clone();
         }
         
-        if let Some(lease_secs) = resource_limits.lease_duration_secs {
-            assignment.start_lease(Duration::from_secs(lease_secs));
-        }
+        assignment.start_lease(resource_limits.lease_duration);
 
         self.wbackend.add_assignment(assignment);
 
@@ -311,13 +307,13 @@ impl WindowHandler {
         };
         
         // RAM
-        limits.max_memory_mb = Some(manifest.resources.ram_using.size);
+        limits.max_memory_mb = manifest.resources.ram_using.size;
         
         // GPU
-        limits.max_gpu_memory_mb = Some(manifest.resources.gpu_using.size);
+        limits.max_gpu_memory_mb = manifest.resources.gpu_using.size;
         
         // Execution mode (manifest'te yok, default kullan)
-        limits.execution_mode = ExecutionMode::GpuPreferred;
+        limits.execution_mode = Some(ExecutionMode::GpuPreferred);
 
         // 3. Permission source yükle
         let source_parser = SourceParser::new(None);
@@ -371,10 +367,9 @@ impl WindowHandler {
 
         if let Some(assignment_id) = window.assignment_id {
             if let Some(mut assignment) = self.wbackend.get_assignment(assignment_id) {
-                assignment.execution_mode = new_limits.execution_mode;
-                assignment.ram_limit = (new_limits.max_memory_mb.unwrap_or(512) * 1024 * 1024) as usize;
-                assignment.vram_limit = (new_limits.max_gpu_memory_mb.unwrap_or(256) * 1024 * 1024) as usize;
-                
+                assignment.execution_mode = new_limits.execution_mode.unwrap_or(ExecutionMode::GpuPreferred);
+                assignment.ram_limit = (new_limits.max_memory_mb * 1024 * 1024) as usize;
+                assignment.vram_limit = (new_limits.max_gpu_memory_mb * 1024 * 1024) as usize;                
                 if !new_limits.cpu_cores.is_empty() {
                     assignment.cpu_cores = new_limits.cpu_cores.clone();
                     assignment.bind_cpu();
@@ -396,9 +391,9 @@ impl WindowHandler {
 
         if let Some(assignment_id) = window.assignment_id {
             if let Some(assignment) = self.wbackend.get_assignment(assignment_id) {
-                let gpu_active = assignment.gpu_device.is_some();
-                let task_running = assignment.task_handle.is_some() 
-                    && *assignment.task_active.lock().unwrap();
+               let gpu_active = assignment.gpu_device.is_some() 
+                    && !matches!(assignment.execution_mode, ExecutionMode::CpuOnly);                
+                    let task_running = assignment.task_handle.is_some();
 
                 let remaining_lease = assignment.lease_duration
                     .and_then(|d| assignment.lease_start.map(|s| {
@@ -469,10 +464,11 @@ impl WindowHandler {
     pub fn close_window(&self, id: u64) -> Result<(), String> {
         let mut windows = self.windows.lock().unwrap();
         
-        if let Some(window) = windows.get(&id) {
-            let children = window.children_ids.clone();
+        if let Some(window) = windows.get(&id).cloned() {
             let assignment_id = window.assignment_id;
+            let children = window.children_ids.clone();
             
+            // Çocuk pencereleri kapat
             for child_id in children {
                 if let Some(child) = windows.get(&child_id) {
                     if let Some(child_assignment_id) = child.assignment_id {
@@ -484,12 +480,14 @@ impl WindowHandler {
                 windows.remove(&child_id);
             }
             
+            // Parent'tan çocuğu çıkar
             if let Some(parent_id) = window.parent_id {
                 if let Some(parent) = windows.get_mut(&parent_id) {
                     parent.children_ids.retain(|&cid| cid != id);
                 }
             }
             
+            // Assignment durdur ve mapping'ten çıkar
             if let Some(aid) = assignment_id {
                 if let Some(mut assignment) = self.wbackend.get_assignment(aid) {
                     assignment.stop_task();
@@ -666,7 +664,7 @@ impl Application for WasmaWindowManager {
             Message::ChangeExecutionMode(id, mode) => {
                 if let Some(window) = self.handler.get_window(id) {
                     let mut new_limits = window.resource_limits.clone();
-                    new_limits.execution_mode = mode;
+                    new_limits.execution_mode = Some(mode);
                     if let Err(e) = self.handler.adjust_window_resources(id, new_limits) {
                         eprintln!("❌ Execution mode değiştirilemedi: {}", e);
                     }
@@ -676,7 +674,7 @@ impl Application for WasmaWindowManager {
         }
     }
 
-    fn view(&self) -> Element<Message> {
+    fn view(&self) -> Element<'_, Message> {
         let windows = self.handler.list_windows();
         
         let header = row![
@@ -712,23 +710,9 @@ impl Application for WasmaWindowManager {
             scrollable(window_list)
         ];
 
-        container(card_content)
+        container(content)
             .width(Length::Fill)
-            .style(move |_theme: &Theme| {
-                container::Appearance {
-                    background: Some(card_background),
-                    border: iced::Border {
-                        color: if is_selected {
-                            Color::from_rgb(0.3, 0.6, 1.0)
-                        } else {
-                            Color::from_rgb(0.3, 0.3, 0.3)
-                        },
-                        width: 2.0,
-                        radius: 8.0.into(),
-                    },
-                    ..Default::default()
-                }
-            })
+            .height(Length::Fill)
             .into()
     }
 }
@@ -737,12 +721,16 @@ impl Application for WasmaWindowManager {
 pub fn launch_window_manager(resource_mode: ResourceMode) -> iced::Result {
     WasmaWindowManager::run(Settings {
         window: window::Settings {
-            size: (1200, 800).into(),
+            size: [1200.0, 800.0].into(),
             position: Position::Centered,
             ..Default::default()
         },
         flags: resource_mode,
-        ..Default::default()
+        fonts: vec![],
+        antialiasing: true,
+        default_font: Default::default(),
+        default_text_size: iced::Pixels(16.0),
+        id: None,
     })
 }
 
@@ -837,16 +825,16 @@ mod tests {
         ).unwrap();
 
         let mut new_limits = ResourceLimits::default();
-        new_limits.max_memory_mb = Some(1024);
-        new_limits.max_gpu_memory_mb = Some(512);
-        new_limits.execution_mode = ExecutionMode::GpuOnly;
+        new_limits.max_memory_mb = 1024;
+        new_limits.max_gpu_memory_mb = 512;
+        new_limits.execution_mode = Some(ExecutionMode::GpuOnly);
 
         handler.adjust_window_resources(id, new_limits.clone()).unwrap();
 
         if let Some(window) = handler.get_window(id) {
-            assert_eq!(window.resource_limits.max_memory_mb, Some(1024));
-            assert_eq!(window.resource_limits.max_gpu_memory_mb, Some(512));
-            assert_eq!(window.resource_limits.execution_mode, ExecutionMode::GpuOnly);
+            assert_eq!(window.resource_limits.max_memory_mb, 1024);
+            assert_eq!(window.resource_limits.max_gpu_memory_mb, 512);
+            assert_eq!(window.resource_limits.execution_mode, Some(ExecutionMode::GpuOnly));
             println!("✅ Test: Kaynak ayarlama başarılı");
         }
     }
@@ -908,15 +896,10 @@ mod tests {
             println!("⚠️  WASMA config dosyası bulunamadı, test atlandı");
         }
     }
-}content)
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .into()
-    }
-}
+} 
 
 impl WasmaWindowManager {
-    fn create_window_card(&self, window: &Window, is_selected: bool) -> Element<Message> {
+    fn create_window_card(&self, window: &Window, is_selected: bool) -> Element<'_, Message> {
         let state_icon = match window.state {
             WindowState::Normal => "🟢",
             WindowState::Minimized => "🟡",

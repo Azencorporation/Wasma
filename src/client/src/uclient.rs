@@ -169,11 +169,13 @@ impl UClient {
     }
 
     #[cfg(not(feature = "glx"))]
+    #[allow(dead_code)]
     fn run_glx(&self, _data: &[u8]) {
         eprintln!("⚠️  GLX renderer not available - build with 'glx' feature");
     }
 
     #[cfg(feature = "intel-uhd")]
+    #[allow(dead_code)]
     fn run_iuhd(&self, data: &[u8]) {
         // Intel UHD: Parallel 4x4 matrix processing with Rayon
         data.par_chunks(16).for_each(|block| {
@@ -183,11 +185,13 @@ impl UClient {
     }
 
     #[cfg(not(feature = "intel-uhd"))]
+    #[allow(dead_code)]
     fn run_iuhd(&self, _data: &[u8]) {
         eprintln!("⚠️  Intel UHD renderer not available - build with 'intel-uhd' feature");
     }
 
     #[cfg(feature = "opencl-gpu")]
+    #[allow(dead_code)]
     fn run_opencl(&self, data: &[u8]) {
         // GPGPU: Zero-copy host pointer mapping
         if let Ok(devices) = get_all_devices(CL_DEVICE_TYPE_GPU) {
@@ -208,6 +212,7 @@ impl UClient {
     }
 
     #[cfg(not(feature = "opencl-gpu"))]
+    #[allow(dead_code)]
     fn run_opencl(&self, _data: &[u8]) {
         eprintln!("⚠️  OpenCL renderer not available - build with 'opencl-gpu' feature");
     }

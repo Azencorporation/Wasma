@@ -4,8 +4,8 @@ use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
 use core_affinity;
 use clap::ValueEnum;
-
-#[derive(Debug, Clone, Copy, PartialEq, ValueEnum)]
+use serde::{Deserialize, Serialize};  
+#[derive(Debug, Clone, Copy, PartialEq, ValueEnum, Serialize, Deserialize)]
 pub enum ExecutionMode {
     #[clap(alias = "cpu")]
     CpuOnly,

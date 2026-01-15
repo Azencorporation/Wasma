@@ -5,7 +5,6 @@
 // Eksik özellik kalmayacak – UBIN polyfill ile tamamlar
 // src/widget/mod.rs-də
 pub use crate::core::abi::{UbinAction, UbinLayoutDirection};
-use std::fmt;
 
 /// Temel UBIN widget'ları – primitive set
 #[derive(Debug, Clone)]

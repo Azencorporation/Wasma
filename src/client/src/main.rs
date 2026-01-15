@@ -4,12 +4,86 @@
 
 use clap::{Parser, Subcommand};
 use std::process;
-use wasma_core::{
-    WasmaCore, WasmaCoreBuilder,
-    utils::{init_config, validate_config, print_config_info},
-    ResourceMode, WindowGeometry, WindowState,
+use wasma_client::{
+    WasmaCore,
+    ResourceMode, WindowState,
 };
-use wbackend::ExecutionMode;
+
+/// Initialize a default configuration file
+fn init_config(output: Option<String>) -> Result<String, String> {
+    use std::fs;
+    use wasma_client::parser::{WasmaConfig, UriHandlingConfig, UserConfig, ResourceLimits};
+    
+    let default_config = WasmaConfig {
+        uri_handling: UriHandlingConfig {
+            window_app_spec: "default.app".to_string(),
+            protocols: vec![],
+            multi_instances: true,
+            singularity_instances: false,
+            compilation_server: None,
+        },
+        user_config: UserConfig {
+            user_withed: "user".to_string(),
+            groups_withed: vec![],
+        },
+        resource_limits: ResourceLimits {
+            ip_scope: "local".to_string(),
+            scope_level: 1,
+            renderer: "cpu".to_string(),
+            execution_mode: None,
+            max_memory_mb: Some(1024),
+            max_vram_mb: Some(512),
+            cpu_cores: vec![],
+        },
+    };
+    
+    let output_path = output.unwrap_or_else(|| "wasmal.conf".to_string());
+    let toml_content = toml::to_string_pretty(&default_config)
+        .map_err(|e| format!("Failed to serialize config: {}", e))?;
+    
+    fs::write(&output_path, toml_content)
+        .map_err(|e| format!("Failed to write config file: {}", e))?;
+    
+    Ok(output_path)
+}
+
+/// Validate a configuration file
+fn validate_config(config_path: Option<String>) -> Result<(), String> {
+    use wasma_client::ConfigParser;
+    
+    let parser = ConfigParser::new(config_path);
+    parser.load().map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+/// Print configuration information
+fn print_config_info(config_path: Option<String>) -> Result<(), String> {
+    use wasma_client::ConfigParser;
+    
+    let parser = ConfigParser::new(config_path);
+    let config = parser.load().map_err(|e| e.to_string())?;
+    
+    println!("WASMA Configuration:");
+    println!("  URI Handling:");
+    println!("    Window App Spec: {}", config.uri_handling.window_app_spec);
+    println!("    Protocols: {:?}", config.uri_handling.protocols);
+    println!("  User Config:");
+    println!("    User: {}", config.user_config.user_withed);
+    println!("    Groups: {:?}", config.user_config.groups_withed);
+    println!("  Resource Limits:");
+    println!("    IP Scope: {}", config.resource_limits.ip_scope);
+    println!("    Scope Level: {}", config.resource_limits.scope_level);
+    println!("    Renderer: {}", config.resource_limits.renderer);
+    if let Some(mem) = config.resource_limits.max_memory_mb {
+        println!("    Max Memory: {} MB", mem);
+    }
+    if let Some(vram) = config.resource_limits.max_vram_mb {
+        println!("    Max VRAM: {} MB", vram);
+    }
+    println!("    CPU Cores: {:?}", config.resource_limits.cpu_cores);
+    
+    Ok(())
+}
 
 #[derive(Parser)]
 #[command(name = "wasma")]
@@ -347,7 +421,7 @@ fn handle_list(config_path: Option<String>, resource_mode: ResourceMode, detaile
     println!("║                    Active Windows                          ║");
     println!("╚════════════════════════════════════════════════════════════╝\n");
 
-    for window in windows {
+    for window in &windows {
         let state_icon = match window.state {
             WindowState::Normal => "🟢",
             WindowState::Minimized => "🟡",
@@ -539,7 +613,7 @@ fn handle_cycle(config_path: Option<String>, resource_mode: ResourceMode, count:
 }
 
 fn handle_uclient(config_path: Option<String>, raw: bool) {
-    use wasma_core::{ConfigParser, UClient};
+    use wasma_client::{ConfigParser, uclient::UClient};
 
     println!("🔌 Starting UClient engine...");
     
@@ -569,17 +643,9 @@ fn handle_uclient(config_path: Option<String>, raw: bool) {
 
 fn build_core(
     config_path: Option<String>,
-    resource_mode: Option<ResourceMode>,
+    _resource_mode: Option<ResourceMode>,
 ) -> Result<WasmaCore, String> {
-    let mut builder = WasmaCoreBuilder::new();
-
-    if let Some(path) = config_path {
-        builder = builder.with_config_path(path);
-    }
-
-    if let Some(mode) = resource_mode {
-        builder = builder.with_resource_mode(mode);
-    }
-
-    builder.build().map_err(|e| e.to_string())
+    // Note: resource_mode parameter is currently unused in WasmaCore::new
+    // It uses the config to determine resource mode
+    WasmaCore::new(config_path).map_err(|e| e.to_string())
 }

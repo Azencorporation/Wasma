@@ -4,6 +4,7 @@
 pub mod core;
 pub mod platform;
 pub mod widget;
+#[cfg(feature = "transmutation")]
 pub mod transmutation;
 pub mod utils;
 

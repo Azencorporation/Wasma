@@ -21,9 +21,10 @@ path = "src/main.rs"
 [dependencies]
 # WBackend - Resource Management Core
 wbackend = { path = "../wbackend" }
-
+wsdg-app-manifest = { path = "../wsdg-app-manifest" }
 # GUI Framework - Iced
 iced = { version = "0.12", features = ["tokio", "advanced"] }
+async-trait = "0.1" 
 
 # System & Hardware
 core_affinity = "0.8"

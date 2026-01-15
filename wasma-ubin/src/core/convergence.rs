@@ -7,7 +7,6 @@ use crate::platform::{detect_current_platform, UbinPlatform};
 use crate::platform::linux::UbinLinuxAdaptor;
 use crate::platform::windows::UbinWindowsAdaptor;
 use crate::platform::macos::UbinMacOSAdaptor;
-use wbackend::resource_manager::ResourceMode;
 use crate::core::runtime::UbinRuntimeWindow;
 use std::collections::{HashSet, HashMap};
 

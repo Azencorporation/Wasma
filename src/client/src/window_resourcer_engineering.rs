@@ -1,6 +1,6 @@
 use core_affinity::{get_core_ids, set_for_current};
 use libc::{sched_param, pthread_setschedparam, SCHED_FIFO};
-use crate::protocols::WasmaConfig;
+use crate::parser::WasmaConfig;
 
 pub struct ResourcerEngineering {
     config: WasmaConfig,
@@ -42,10 +42,8 @@ impl ResourcerEngineering {
     }
 
     fn init_gpu_context(&self, vram_mb: u64) {
-        unsafe {
-            let level = self.config.resource_limits.scope_level;
-            self.enable_glx_pipeline(level, vram_mb);
-        }
+        let level = self.config.resource_limits.scope_level;
+        self.enable_glx_pipeline(level, vram_mb);
     }
 
     fn enable_glx_pipeline(&self, level: u32, vram_mb: u64) {

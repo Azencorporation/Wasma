@@ -8,16 +8,26 @@ use std::path::{Path, PathBuf};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
+/// Error type for source parsing operations.
 pub enum SourceError {
+    /// Source file not found.
     #[error("Source file not found: {0}")]
     FileNotFound(String),
     
+    /// Failed to read source file.
     #[error("Failed to read source: {0}")]
     ReadError(String),
     
+    /// Failed to parse source at a specific line.
     #[error("Failed to parse source line {line}: {reason}")]
-    ParseError { line: usize, reason: String },
+    ParseError { 
+        /// Line number where parsing failed.
+        line: usize, 
+        /// Reason for parsing failure.
+        reason: String 
+    },
     
+    /// Invalid permission value provided.
     #[error("Invalid permission value: {0}")]
     InvalidValue(String),
 }
@@ -45,15 +55,22 @@ pub struct PermissionSource {
 }
 
 #[derive(Debug, Clone, Default)]
+/// Network-related permissions for the application.
 pub struct NetworkPermissions {
+    /// Permission to use Ethernet connection.
     pub ethernet: bool,
+    /// Permission to use WiFi connection.
     pub wifi: bool,
+    /// Permission for web resolving (DNS).
     pub web_resolving: WebResolving,
 }
 
 #[derive(Debug, Clone)]
+/// Web resolving permissions.
 pub enum WebResolving {
+    /// Allow all default web resolving.
     AllDefault,
+    /// Allow resolving only specific domains.
     Specific(Vec<String>), // Specific domains
 }
 
@@ -64,17 +81,26 @@ impl Default for WebResolving {
 }
 
 #[derive(Debug, Clone, Default)]
+/// Filesystem-related permissions for the application.
 pub struct FilesystemPermissions {
+    /// Permission to disable chattr (change file attributes).
     pub chattr_disabler: bool,
+    /// File exception settings.
     pub file_exception: FileException,
+    /// Maximum file width/size limit in GB.
     pub file_width: Option<u64>, // in GB
 }
 
 #[derive(Debug, Clone)]
+/// File exception settings for filesystem permissions.
 pub enum FileException {
+    /// No file exceptions.
     None,
+    /// Specific file paths allowed.
     Specific(Vec<String>), // file://Documents
+    /// Query all files.
     QueryAll,              // *&ALL
+    /// No query allowed.
     NoQuery,               // file://*
 }
 
@@ -85,19 +111,30 @@ impl Default for FileException {
 }
 
 #[derive(Debug, Clone, Default)]
+/// USB-related permissions for the application.
 pub struct UsbPermissions {
+    /// USB connectional permissions.
     pub connectional: UsbConnectional,
+    /// Permission to use USB networking.
     pub net: bool,
+    /// Plug and play permissions.
     pub plug_and_play: PlugAndPlay,
 }
 
 #[derive(Debug, Clone)]
+/// USB connectional permissions.
 pub enum UsbConnectional {
+    /// No USB connectional permissions.
     None,
+    /// All USB drivers allowed.
     AllDriver,
+    /// Disk I/O permissions.
     DiskIot,
+    /// Ethernet over USB port permissions.
     EthernetUsbPort,
+    /// USB media permissions.
     UsbMedia,
+    /// Plug and play only.
     PlugAndPlayOnly,
 }
 
@@ -108,13 +145,21 @@ impl Default for UsbConnectional {
 }
 
 #[derive(Debug, Clone)]
+/// Plug and play device permissions.
 pub enum PlugAndPlay {
+    /// No plug and play permissions.
     None,
+    /// All plug and play devices allowed.
     All,
+    /// Microphone access.
     Microphone,
+    /// Camera access.
     Camera,
+    /// Mouse access.
     Mouse,
+    /// MIDI device access.
     Midi,
+    /// Specific devices allowed.
     Specific(Vec<String>),
 }
 
@@ -125,17 +170,26 @@ impl Default for PlugAndPlay {
 }
 
 #[derive(Debug, Clone, Default)]
+/// Media-related permissions for the application.
 pub struct MediaPermissions {
+    /// Webcam permissions.
     pub webcam: WebcamPermission,
+    /// Microphone permissions.
     pub microphone: AudioPermission,
+    /// Audio permissions.
     pub audio: AudioPermission,
 }
 
 #[derive(Debug, Clone)]
+/// Webcam permission levels.
 pub enum WebcamPermission {
+    /// No webcam access.
     No,
+    /// Step by device access.
     StepByDevice, // &step_by_device = :use_webcam
+    /// Use webcam.
     UseWebcam,    // use_webcam
+    /// All webcam permissions.
     All,
 }
 
@@ -146,10 +200,15 @@ impl Default for WebcamPermission {
 }
 
 #[derive(Debug, Clone)]
+/// Audio permission levels.
 pub enum AudioPermission {
+    /// No audio access.
     No,
+    /// One-time audio access.
     Justing, // One-time access
+    /// All opened audio devices.
     OpenedAll,
+    /// All audio permissions.
     All,
 }
 
@@ -160,7 +219,9 @@ impl Default for AudioPermission {
 }
 
 #[derive(Debug, Clone, Default)]
+/// System-related permissions for the application.
 pub struct SystemPermissions {
+    /// Custom system permission fields.
     pub custom_fields: HashMap<String, String>,
 }
 
@@ -170,6 +231,7 @@ pub struct SourceParser {
 }
 
 impl SourceParser {
+    /// Create a new SourceParser with optional base path.
     pub fn new(base_path: Option<PathBuf>) -> Self {
         Self { base_path }
     }
@@ -220,15 +282,16 @@ impl SourceParser {
         None
     }
 
-    fn parse(&self, content: &str) -> Result<PermissionSource, SourceError> {
+    /// Parse permission source content from string.
+    pub fn parse(&self, content: &str) -> Result<PermissionSource, SourceError> {
         let mut network = NetworkPermissions::default();
         let mut filesystem = FilesystemPermissions::default();
         let mut usb = UsbPermissions::default();
         let mut media = MediaPermissions::default();
-        let mut system = SystemPermissions::default();
+        let system = SystemPermissions::default();
         let mut custom = HashMap::new();
 
-        for (line_num, line) in content.lines().enumerate() {
+        for (_line_num, line) in content.lines().enumerate() {
             let line = line.trim();
             
             // Skip empty lines and comments

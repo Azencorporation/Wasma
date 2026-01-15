@@ -70,7 +70,7 @@ impl Application for UbinFallbackApp {
         Command::none()
     }
 
-    fn view(&self) -> Element<FallbackMessage> {
+    fn view(&self) -> Element<'_, FallbackMessage> {
         if self.windows.is_empty() {
             return container(text("No active UBIN windows in fallback mode"))
                 .center_x()
