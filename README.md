@@ -24,7 +24,18 @@
 - Cross-platform; the **only dependency is Rust**. Other libraries are optional in terms of optimization and customization.  
 - Supported platforms: **Linux, Windows, macOS, BSD**  
 - Optional legacy version: can be used on **SystemV, Unix, Plan 9, Bell**, or **any Rust-supported operating system**.
+# Setuping
 
+```
+git clone https://github.com/Azencorporation/Wasma
+cd Wasma
+cargo build --release
+```
+# Testing
+```
+cd Wasma/src/client
+cargo bench
+```
 ---
 
 ## Development Status
