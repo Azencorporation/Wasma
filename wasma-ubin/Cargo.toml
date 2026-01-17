@@ -1,6 +1,6 @@
 [package]
 name = "wasma-ubin"
-version = "1.1.0-stable-beta1"
+version = "1.2.0-stable-beta1"
 edition = "2021"
 authors = ["Zaman Huseyinli <zamanhuseynli23@gmail.com>", "AUO Lejyon"]
 description = "WASMA Unified Binary Interface – Tek otorite, sınırsız egemenlik"
