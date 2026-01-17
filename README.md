@@ -1,6 +1,7 @@
 # WASMA: Windows Assignment System Monitoring Architecture
 
 **WASMA**, or Windows Assignment System Monitoring Architecture, is a cross-platform infrastructure providing **WM, Compositor, and UI frontend support**, offering full support for **interface management**.
+<img src="https://raw.githubusercontent.com/Azencorporation/Wasma/refs/heads/main/logo.png" width="50">
 
 ---
 
