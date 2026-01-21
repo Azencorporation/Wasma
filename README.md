@@ -41,7 +41,7 @@ cargo bench
 ```
 ---
 # Documentary
-For all necessary documentation : [Wasma Documentary](https://wiki.azccriminal.space/wasma.html)
+For all necessary documentation:[Wasma Documentary](https://wiki.azccriminal.space/wasma.html)
 
 ## Development Status
 
