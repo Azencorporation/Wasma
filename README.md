@@ -40,10 +40,14 @@ cd Wasma/src/client
 cargo bench
 ```
 ---
+# Documentary
+For all necessary documentation : [Wasma Documentary](https://wiki.azccriminal.space/wasma.html)
 
 ## Development Status
 
 Since WASMA is still in **development**, some features are not yet stable.  
 If you would like to contribute, you can submit pull requests here: [Pulls](https://github.com/Azencorporation/Wasma/pulls)
+
+
 
 
