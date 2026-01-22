@@ -43,6 +43,11 @@ cargo bench
 # Documentary
 For all necessary documentation:[Wasma Documentary](https://wiki.azccriminal.space/wasma.html)
 
+# Donate
+We spending a lot of time and energy developing this project, and thanks to your valuable contributions, it will become even better:
+
+[![Donate with PayPal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/donate/?hosted_button_id=NKPHAU3NY3GZU)
+
 ## Development Status
 
 Since WASMA is still in **development**, some features are not yet stable.  
