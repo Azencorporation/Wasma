@@ -3,13 +3,12 @@
 // Used in buffer before XDG-WSDG translation or needed for application environments/interfaces
 // Part of WASMA (Windows Assignment System Monitoring Architecture)
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::fs;
 use std::collections::HashMap;
 use thiserror::Error;
 
 use crate::xdg_wsdg_translate::{XdgWsdgTranslator, EnvConfig, ShellStandard};
-use crate::wsdg_env::WsdgEnv;
 
 #[derive(Debug, Error)]
 pub enum AutoCompileError {

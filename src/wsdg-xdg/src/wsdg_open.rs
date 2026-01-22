@@ -375,6 +375,11 @@ impl WsdgOpen {
         
         apps
     }
+    
+    /// Get environment reference
+    pub fn env(&self) -> &WsdgEnv {
+        &self.env
+    }
 }
 
 #[cfg(test)]

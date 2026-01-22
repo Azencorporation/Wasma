@@ -557,6 +557,8 @@ pub enum Message {
     FocusWindow(u64),
     MinimizeWindow(u64),
     MaximizeWindow(u64),
+    ToggleFullscreen(u64),
+    HideWindow(u64),
     UpdateResourceCycle,
     AdjustResources(u64),
     ChangeExecutionMode(u64, ExecutionMode),
@@ -650,6 +652,27 @@ impl Application for WasmaWindowManager {
             Message::MaximizeWindow(id) => {
                 if let Err(e) = self.handler.set_window_state(id, WindowState::Maximized) {
                     eprintln!("❌ Could not maximize {}: {}", id, e);
+                }
+                Command::none()
+            }
+            
+            Message::ToggleFullscreen(id) => {
+                if let Some(window) = self.handler.get_window(id) {
+                    let new_state = if window.state == WindowState::Fullscreen {
+                        WindowState::Normal
+                    } else {
+                        WindowState::Fullscreen
+                    };
+                    if let Err(e) = self.handler.set_window_state(id, new_state) {
+                        eprintln!("❌ Could not toggle fullscreen {}: {}", id, e);
+                    }
+                }
+                Command::none()
+            }
+            
+            Message::HideWindow(id) => {
+                if let Err(e) = self.handler.set_window_state(id, WindowState::Hidden) {
+                    eprintln!("❌ Could not hide {}: {}", id, e);
                 }
                 Command::none()
             }
@@ -919,9 +942,13 @@ impl WasmaWindowManager {
             Space::with_width(Length::Fill),
             button("Focus").on_press(Message::FocusWindow(window.id)),
             Space::with_width(5),
-            button("Minimize").on_press(Message::MinimizeWindow(window.id)),
+            button("Min").on_press(Message::MinimizeWindow(window.id)),
             Space::with_width(5),
-            button("Maximize").on_press(Message::MaximizeWindow(window.id)),
+            button("Max").on_press(Message::MaximizeWindow(window.id)),
+            Space::with_width(5),
+            button("FS").on_press(Message::ToggleFullscreen(window.id)),
+            Space::with_width(5),
+            button("Hide").on_press(Message::HideWindow(window.id)),
             Space::with_width(5),
             button("✕").on_press(Message::CloseWindow(window.id)),
         ]

@@ -50,16 +50,6 @@ macos = []
 # Tüm özellikler aktif – tam WASMA deneyimi
 full = ["native-fallback", "transmutation"]
 
-[profile.release]
-opt-level = 3
-lto = true
-codegen-units = 1
-panic = "abort"
-
-[profile.dev]
-opt-level = 0
-debug = true
-
 [[bin]]
 name = "wasma-ubin"
 path = "src/main.rs"

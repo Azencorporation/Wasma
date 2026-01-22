@@ -17,12 +17,11 @@ path = "src/lib.rs"
 [[bin]]
 name = "wsdg-open"
 path = "src/bin/wsdg-open.rs"
-required-features = ["cli"]
+
 
 [[bin]]
 name = "wsdg-env"
 path = "src/bin/wsdg-env.rs"
-required-features = ["cli"]
 
 [dependencies]
 # Error handling
@@ -37,18 +36,5 @@ pretty_assertions = "1.4"
 
 [features]
 default = []
-cli = [] # Enable CLI tools
-
-[profile.release]
-opt-level = 3
-lto = true
-codegen-units = 1
-strip = true
-
-[profile.dev]
-opt-level = 1
-debug = true
-
 [package.metadata.docs.rs]
 all-features = true
-rustdoc-args = ["--cfg", "docsrs"]

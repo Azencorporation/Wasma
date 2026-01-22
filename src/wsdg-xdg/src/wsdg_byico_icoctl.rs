@@ -425,8 +425,6 @@ mod tests {
     
     #[test]
     fn test_app_name_cleaning() {
-        let mut ico_ctl = WsdgIcoCtl::new();
-        
         // These should all search for the same icon
         let names = vec![
             "firefox",
