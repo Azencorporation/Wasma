@@ -3,7 +3,8 @@ members = [
     "src/client",
     "src/wbackend",
     "src/wsdg-app-manifest",
-    "wasma-ubin"
+    "wasma-ubin",
+    "src/wsdg-xdg"
 ]
 
 [workspace.package]

@@ -1,0 +1,54 @@
+[package]
+name = "wsdg-xdg"
+version = "0.1.0"
+edition = "2021"
+authors = ["Azccriminal and Azencorporation."]
+description = "WSDG-XDG Translation Layer - Translates XDG environment to WSDG interface logic"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/Azencorporation/Wasma"
+keywords = ["xdg", "wsdg", "environment", "translation", "wasma"]
+categories = ["os", "config", "filesystem"]
+readme = "README.md"
+
+[lib]
+name = "wsdg_xdg"
+path = "src/lib.rs"
+
+[[bin]]
+name = "wsdg-open"
+path = "src/bin/wsdg-open.rs"
+required-features = ["cli"]
+
+[[bin]]
+name = "wsdg-env"
+path = "src/bin/wsdg-env.rs"
+required-features = ["cli"]
+
+[dependencies]
+# Error handling
+thiserror = "1.0"
+
+# Path and directory utilities
+dirs = "5.0"
+
+[dev-dependencies]
+tempfile = "3.8"
+pretty_assertions = "1.4"
+
+[features]
+default = []
+cli = [] # Enable CLI tools
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+
+[profile.dev]
+opt-level = 1
+debug = true
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
