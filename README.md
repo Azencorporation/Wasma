@@ -2,6 +2,9 @@
 
 **WASMA**, or Windows Assignment System Monitoring Architecture, is a cross-platform infrastructure providing **WM, Compositor, and UI frontend support**, offering full support for **interface management**.
 
+
+<img src="https://raw.githubusercontent.com/Azencorporation/Wasma/refs/heads/main/logo.png" width="500">
+
 ---
 
 ## Features
@@ -24,12 +27,27 @@
 - Cross-platform; the **only dependency is Rust**. Other libraries are optional in terms of optimization and customization.  
 - Supported platforms: **Linux, Windows, macOS, BSD**  
 - Optional legacy version: can be used on **SystemV, Unix, Plan 9, Bell**, or **any Rust-supported operating system**.
+# Setuping
 
+```
+git clone https://github.com/Azencorporation/Wasma
+cd Wasma
+cargo build --release
+```
+# Testing
+```
+cd Wasma/src/client
+cargo bench
+```
 ---
+# Documentary
+For all necessary documentation:[Wasma Documentary](https://wiki.azccriminal.space/wasma.html)
 
 ## Development Status
 
 Since WASMA is still in **development**, some features are not yet stable.  
 If you would like to contribute, you can submit pull requests here: [Pulls](https://github.com/Azencorporation/Wasma/pulls)
+
+
 
 
