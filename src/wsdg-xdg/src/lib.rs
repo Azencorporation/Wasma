@@ -113,7 +113,6 @@ pub use wsdg_mime_array::{
     WsdgMimeArray,
     MimeType,
     MimeCategory,
-    IconFormat,
     MimeError,
 };
 

@@ -20,6 +20,7 @@ pub enum EnvError {
 }
 
 /// WSDG Environment Manager
+#[derive(Clone)]
 pub struct WsdgEnv {
     /// Environment variables managed by WSDG
     vars: HashMap<String, String>,
@@ -220,7 +221,7 @@ impl WsdgEnv {
     }
     
     /// Merge with XDG translator config
-    pub fn merge_from_translator(&mut self, translator: &crate::xdg_wsdg_translate::XdgWsdgTranslator) {
+    pub fn merge_from_translator(&mut self, _translator: &crate::xdg_wsdg_translate::XdgWsdgTranslator) {
         // This would integrate with the translator
         // Implementation depends on translator API
     }

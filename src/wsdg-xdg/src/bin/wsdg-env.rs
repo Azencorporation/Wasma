@@ -4,7 +4,7 @@
 
 use std::env;
 use std::process;
-use wsdg_xdg::{WsdgEnv, XdgWsdgTranslator, AutoCompileHelper, CompileMode, ShellStandard};
+use wsdg_xdg::{WsdgEnv, XdgWsdgTranslator, AutoCompileHelper, ShellStandard};
 
 fn print_usage() {
     eprintln!("Usage: wsdg-env [COMMAND] [OPTIONS]");
@@ -205,7 +205,7 @@ fn main() {
             match XdgWsdgTranslator::from_default() {
                 Ok(translator) => {
                     match AutoCompileHelper::load_or_compile(translator) {
-                        Ok(mut compiler) => {
+                        Ok(compiler) => {
                             if let Err(e) = compiler.save_cache() {
                                 eprintln!("Warning: Failed to save cache: {}", e);
                             }

@@ -4,7 +4,7 @@
 // Part of WASMA (Windows Assignment System Monitoring Architecture)
 
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::fs;
 use std::env;
 use thiserror::Error;
@@ -99,8 +99,8 @@ impl EnvPathParser {
     pub fn from_default() -> Result<Self, TranslateError> {
         // Try to find env.path in standard locations
         let possible_paths = vec![
-            PathBuf::from("/etc/wsdg/env.path"),
-            PathBuf::from("/usr/share/wsdg/env.path"),
+            Some(PathBuf::from("/etc/wsdg/env.path")),
+            Some(PathBuf::from("/usr/share/wsdg/env.path")),
             dirs::config_dir().map(|p| p.join("wsdg/env.path")),
         ];
         
@@ -263,6 +263,7 @@ impl EnvPathParser {
     }
 }
 
+#[derive(Clone)]
 pub struct XdgWsdgTranslator {
     config: EnvConfig,
     cache: HashMap<String, PathBuf>,

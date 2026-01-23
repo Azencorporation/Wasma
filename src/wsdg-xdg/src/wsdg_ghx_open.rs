@@ -145,7 +145,7 @@ impl WsdgGhxOpen {
     /// Register default protocol handlers
     fn register_default_handlers(&mut self) {
         // App protocol - Custom app:// URI for manifest-based apps
-        self.register_handler("app", Box::new(|uri, env| {
+        self.register_handler("app", Box::new(|uri, _env| {
             // This requires manifest support - for now delegate to system
             // In full implementation, this would use WsdgManifestOpen
             let app_target = uri.to_string();

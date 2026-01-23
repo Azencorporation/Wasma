@@ -134,6 +134,7 @@ impl Default for WsdgSettings {
 
 /// WSDG Settings Manager
 pub struct WsdgSettingsManager {
+    #[allow(dead_code)]
     env: WsdgEnv,
     settings: WsdgSettings,
     settings_path: PathBuf,

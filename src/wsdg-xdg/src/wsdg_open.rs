@@ -45,7 +45,7 @@ pub struct AppInfo {
 
 /// WSDG Open - Application launcher
 pub struct WsdgOpen {
-    env: WsdgEnv,
+    pub(crate) env: WsdgEnv,
     translator: Option<XdgWsdgTranslator>,
     app_cache: HashMap<String, AppInfo>,
     desktop_dirs: Vec<PathBuf>,
