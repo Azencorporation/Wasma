@@ -1,0 +1,53 @@
+[workspace]
+resolver = "2"
+members = [
+    "src/client",
+    "src/wbackend",
+    "src/wsdg-app-manifest",
+    "wasma-ubin",
+    "src/wsdg-xdg"
+]
+
+[workspace.package]
+version = "1.2.0-beta1"
+edition = "2021"
+authors = ["Azencorporation"]
+description = "WASMA (Windows Assignment System Monitoring Architecture) - Complete System"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/wasma/wasma"
+homepage = "https://wasma.dev"
+keywords = ["system", "monitoring", "architecture", "wasi", "sandboxing"]
+categories = ["development-tools", "os", "api-bindings"]
+
+[workspace.dependencies]
+serde = { version = "1.0", features = ["derive"] }
+tokio = { version = "1.0", features = ["full"] }
+thiserror = "1.0"
+anyhow = "1.0"
+clap = { version = "4.0", features = ["derive"] }
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"
+
+[profile.dev]
+opt-level = 1
+debug = true
+
+[profile.release-with-debug]
+inherits = "release"
+debug = true
+strip = false
+
+[profile.test]
+opt-level = 1
+
+[profile.bench]
+opt-level = 3
+debug = false
+lto = true

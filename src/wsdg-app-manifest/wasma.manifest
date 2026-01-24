@@ -1,0 +1,36 @@
+name = app.name
+uri_appimg = file://usr/share/pixelevel/map/12x12.png *// image path
+uri_shortcut = file://Desktop *// shortcut path
+app_uri = file:///usr/bin/example-app *// example application path
+cpu_perception = 1 *// can be defined through the GUI, so this number can vary
+cpu_affinity = perception { 100 resource_max : 10 } bitmax *"20" *// usage bitmax limit per defined core
+cpu_core_serve = "1" affinity_default *// memory dedicated to the server, can be dynamically adjusted depending on "dynamic" usage, affinity will be set by default but can be defined separately if needed
+gpu_perp = "VRAM:allocation:size_bydefault = 1024" *// maximum GPU memory allocated for the application, instead of allocation, "location" can be used to define where the memory will be allocated; however, allocation is recommended to avoid issues
+gpu_using = "1024" { 100 resource_max : 15 } bitwidthed *"25" *// max usage type and bitwidth width
+ram_using = "DDR5" "1024MB" "*cache_resolved:swaponline" *// defines the RAM usage area by default, but if swap is dedicated for cache, it can be set to online, otherwise offline
+ram_used_bitwidth = "1024MB" "bit_width : 15" *cache_resourceing : "20%" *// defines RAM usage per bitwidth and cache resource usage with interest
+uri_app_source = file://usr/bin/app *permission_check *POLICY _ENV *// policy set environment for app source execution
+uri_app_resource = file://local/bin/app,file//bin/app *// selection according to different variations
+permission_check = URI:PERMISSION_DEVEL://string : permission_devel *USER *// permissions open for development at the user level, path pulled from $HOME/$USE_CONFIG/permission_app/source environment variables. If using permission_sys, permission_preset, permission_pinning, permission_purning, path changes accordingly
+// * The formats mentioned below are source-based and can be used within or outside the manifest
+//* When used in the manifest, they should be outside [source], but files starting with source* must be used; custom permission variables may vary
+*// Example paths
+*// permission_sys = $ROOT/lib/share/permission/source
+*// permission_pinning = $ROOT/lib/share/permissioner/source_pinning *// permissions with chattr to prevent modification by the user unless specifically allowed
+*// permission_purning = $ROOT/lib/share/permissionpurnering/source_purnering *// dynamic permissions, each application is distributed with fewer permissions and may require additional permissions later
+*// permission format depends on applist
+*// USE_ETHERNET_CONNECTION = 1 *// allows application to use ethernet connection
+*// USE_WIFI_CONNECTION = 1 *// allows application to use wifi connection
+*// USE_CHATTR_DISABLER = 0 *// disable pinning if the application requests it, or you can disable it yourself
+*// USE_FILE_EXCEPTION = *file://Documents *// allows permission only for specific file areas *&ALL *// accesses all file areas without restriction *file://* *// unrestricted access
+*// USE_FILE_WITDH = 20 GB *// defines the application width, default is false because it may cause issues and is usually unnecessary
+*// USE_WEB_RESOLVEING = http://brave.com *// specifies a particular web resolving source; this feature restricts the app's interaction to a certain domain. If required, it can remain as ALL_DEFAULT, but limiting it may break interactions
+*// USE_USB_CONNECTIONAL = driver_disk_iot *// covers all USB driver permissions for access, *ALL_DRIVER for specific drivers like driver_disk_iot for disk-based USB drivers, driver_ethernet_usb_port for ethernet-based USB converters, driver_usb_media for media-based USB permissions, driver_usb_plug_and_play for plug-and-play USB devices
+*// USE_USB_NET = 1 *// allows access to the network via USB, 0 means no access, 1 means access is allowed
+*// USE_USB_PLUG_AND_PLAY = ALL *// defines which plug-and-play devices are accessible, e.g., "microphone" for microphone-based access, "camera" for USB camera modules, "mouse" for mouse modules, "midi" for MIDI-based device access, "ALL" for all devices
+*// USE_WEBCAM_OPENED = &step_by_device = :use_webcam *// when needed, adjusts webcam access, "use_webcam" for access in all cases, or "ALL" to allow webcam access in all situations without specific steps
+*// USE_MICROPHONE = ALL *// microphone access, "JUSTING" for one-time access, "NO" for access off, "ALL" for all access
+*// USE_AUDIO = ALL *// audio access, "JUSTING" for one-time access, "NO" for no access, "OPENED_ALL" for always open access, "ALL" for all access
+
+
+
